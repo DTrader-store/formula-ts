@@ -1,0 +1,35 @@
+# KDJ Indicator (Stochastic Oscillator)
+# Similar to Stochastic %K, %D, and %J
+
+# Period for KDJ calculation
+N:9;
+M1:3;
+M2:3;
+
+# Highest High and Lowest Low over N periods
+HH:HHV(HIGH,N);
+LL:LLV(LOW,N);
+
+# RSV (Raw Stochastic Value)
+RSV:(CLOSE-LL)/(HH-LL)*100;
+
+# K Line: EMA of RSV with M1 period
+K:EMA(RSV,M1);
+
+# D Line: EMA of K with M2 period
+D:EMA(K,M2);
+
+# J Line: 3*K - 2*D
+J:3*K-2*D;
+
+# Overbought signal (K > 80)
+OVERBOUGHT:IF(K>80,1,0);
+
+# Oversold signal (K < 20)
+OVERSOLD:IF(K<20,1,0);
+
+# Golden Cross: K crosses above D
+GOLDEN:CROSS(K,D);
+
+# Death Cross: D crosses above K
+DEATH:CROSS(D,K);

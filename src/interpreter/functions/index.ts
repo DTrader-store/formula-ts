@@ -20,13 +20,13 @@ function createArrayFunction(
   name: string,
   minArgs: number,
   maxArgs: number,
-  fn: (...args: number[][]) => number[]
+  _fn: (...args: number[][]) => number[]
 ): FormulaFunction {
   return {
     name,
     minArgs,
     maxArgs,
-    execute: (args: number[]) => {
+    execute: (_args: number[]) => {
       // This is a simplified implementation
       // In a real interpreter, array handling would be more sophisticated
       // For now, this throws an error to indicate array functions need special handling

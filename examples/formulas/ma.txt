@@ -1,0 +1,17 @@
+# Simple Moving Average (MA) Example
+# Calculates 5-day, 10-day, and 20-day moving averages
+
+# Short-term MA (5 days)
+MA5:MA(CLOSE,5);
+
+# Medium-term MA (10 days)
+MA10:MA(CLOSE,10);
+
+# Long-term MA (20 days)
+MA20:MA(CLOSE,20);
+
+# Golden Cross Signal: MA5 crosses above MA10
+GOLDEN_CROSS:CROSS(MA5,MA10);
+
+# Death Cross Signal: MA10 crosses above MA20
+DEATH_CROSS:CROSS(MA10,MA20);

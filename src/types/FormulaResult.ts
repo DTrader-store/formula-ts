@@ -28,6 +28,6 @@ export interface OutputLine {
 export interface FormulaResult {
   /** Array of output lines from the formula calculation */
   outputs: OutputLine[];
-  /** Calculated variables and their values */
-  variables: Record<string, number>;
+  /** Calculated variables and their values (arrays of numbers) */
+  variables: Record<string, number[]>;
 }

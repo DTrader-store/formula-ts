@@ -1,0 +1,23 @@
+# MACD (Moving Average Convergence Divergence) Indicator
+# Classic MACD with 12, 26, and 9 periods
+
+# Fast EMA (12 periods)
+FAST:EMA(CLOSE,12);
+
+# Slow EMA (26 periods)
+SLOW:EMA(CLOSE,26);
+
+# MACD Line = Fast EMA - Slow EMA
+MACD:FAST-SLOW;
+
+# Signal Line = 9-period EMA of MACD
+SIGNAL:EMA(MACD,9);
+
+# Histogram = MACD - Signal
+HIST:MACD-SIGNAL;
+
+# Buy Signal: MACD crosses above Signal
+BUY:CROSS(MACD,SIGNAL);
+
+# Sell Signal: Signal crosses above MACD
+SELL:CROSS(SIGNAL,MACD);
