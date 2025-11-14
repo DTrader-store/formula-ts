@@ -1,0 +1,102 @@
+{
+  "Simple Moving Average": {
+    "prefix": "ma",
+    "body": "MA(${1:data}, ${2:period})",
+    "description": "Simple Moving Average"
+  },
+  "Exponential Moving Average": {
+    "prefix": "ema",
+    "body": "EMA(${1:data}, ${2:period})",
+    "description": "Exponential Moving Average"
+  },
+  "Sum": {
+    "prefix": "sum",
+    "body": "SUM(${1:data}, ${2:period})",
+    "description": "Sum of values over period"
+  },
+  "Maximum": {
+    "prefix": "max",
+    "body": "MAX(${1:a}, ${2:b})",
+    "description": "Maximum of two values"
+  },
+  "Minimum": {
+    "prefix": "min",
+    "body": "MIN(${1:a}, ${2:b})",
+    "description": "Minimum of two values"
+  },
+  "Highest High Value": {
+    "prefix": "hhv",
+    "body": "HHV(${1:data}, ${2:period})",
+    "description": "Highest value over period"
+  },
+  "Lowest Low Value": {
+    "prefix": "llv",
+    "body": "LLV(${1:data}, ${2:period})",
+    "description": "Lowest value over period"
+  },
+  "Reference": {
+    "prefix": "ref",
+    "body": "REF(${1:data}, ${2:period})",
+    "description": "Reference value from N bars ago"
+  },
+  "If Condition": {
+    "prefix": "if",
+    "body": "IF(${1:condition}, ${2:true_value}, ${3:false_value})",
+    "description": "If condition then else"
+  },
+  "Cross": {
+    "prefix": "cross",
+    "body": "CROSS(${1:a}, ${2:b})",
+    "description": "Check if a crosses above b"
+  },
+  "Every": {
+    "prefix": "every",
+    "body": "EVERY(${1:condition}, ${2:period})",
+    "description": "Check if condition is true for all bars in period"
+  },
+  "Exist": {
+    "prefix": "exist",
+    "body": "EXIST(${1:condition}, ${2:period})",
+    "description": "Check if condition exists in period"
+  },
+  "Bars Last": {
+    "prefix": "barslast",
+    "body": "BARSLAST(${1:condition})",
+    "description": "Bars since condition was true"
+  },
+  "Count": {
+    "prefix": "count",
+    "body": "COUNT(${1:condition}, ${2:period})",
+    "description": "Count occurrences of condition in period"
+  },
+  "Variable Assignment": {
+    "prefix": "var",
+    "body": "${1:name} := ${2:value};",
+    "description": "Assign value to variable"
+  },
+  "Draw Line Red": {
+    "prefix": "drawred",
+    "body": "${1:expression}, COLORRED, LINETHICK${2:1};",
+    "description": "Draw expression as red line"
+  },
+  "Draw Line Green": {
+    "prefix": "drawgreen",
+    "body": "${1:expression}, COLORGREEN, LINETHICK${2:1};",
+    "description": "Draw expression as green line"
+  },
+  "Draw Line Blue": {
+    "prefix": "drawblue",
+    "body": "${1:expression}, COLORBLUE, LINETHICK${2:1};",
+    "description": "Draw expression as blue line"
+  },
+  "Comment Line": {
+    "prefix": "comment",
+    "body": "// ${1:comment}",
+    "description": "Single-line comment"
+  },
+  "Block Comment": {
+    "prefix": "bcomment",
+    "body": "{\n  ${1:comment}\n}",
+    "description": "Block comment"
+  }
+}

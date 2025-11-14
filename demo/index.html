@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula-TS 演示 - 交易公式引擎</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Formula-TS 演示</h1>
+            <p class="subtitle">实时公式解析与技术指标可视化</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel: Formula Editor -->
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <h2>公式编辑器</h2>
+                    <div class="example-selector">
+                        <label for="exampleSelect">示例公式:</label>
+                        <select id="exampleSelect">
+                            <option value="">选择示例...</option>
+                            <option value="ma">移动平均线 (MA)</option>
+                            <option value="macd">MACD</option>
+                            <option value="kdj">KDJ</option>
+                            <option value="boll">布林带 (BOLL)</option>
+                            <option value="rsi">RSI</option>
+                            <option value="custom">自定义策略</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="editor-container">
+                    <textarea id="formulaEditor" placeholder="在此输入公式...&#10;例如:&#10;MA5: MA(CLOSE, 5);&#10;MA10: MA(CLOSE, 10);&#10;DRAW MA5;&#10;DRAW MA10, COLOR: BLUE;"></textarea>
+                </div>
+
+                <div class="editor-actions">
+                    <button id="runButton" class="btn btn-primary">
+                        <span class="icon">▶</span>
+                        执行公式
+                    </button>
+                    <button id="clearButton" class="btn btn-secondary">
+                        <span class="icon">✕</span>
+                        清空
+                    </button>
+                    <button id="loadDataButton" class="btn btn-secondary">
+                        <span class="icon">📊</span>
+                        加载示例数据
+                    </button>
+                </div>
+
+                <!-- Error Display -->
+                <div id="errorDisplay" class="error-display"></div>
+
+                <!-- Formula Info -->
+                <div class="info-panel">
+                    <h3>公式说明</h3>
+                    <div id="formulaInfo" class="formula-info">
+                        <p>支持的函数包括:</p>
+                        <ul>
+                            <li><strong>MA(data, period)</strong> - 移动平均线</li>
+                            <li><strong>EMA(data, period)</strong> - 指数移动平均线</li>
+                            <li><strong>SUM(data, period)</strong> - 求和</li>
+                            <li><strong>MAX(data, period)</strong> - 最大值</li>
+                            <li><strong>MIN(data, period)</strong> - 最小值</li>
+                            <li><strong>REF(data, offset)</strong> - 引用历史数据</li>
+                            <li><strong>HHV(data, period)</strong> - 最高值</li>
+                            <li><strong>LLV(data, period)</strong> - 最低值</li>
+                            <li><strong>CROSS(a, b)</strong> - 交叉检测</li>
+                            <li><strong>IF(condition, true_val, false_val)</strong> - 条件判断</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Chart Display -->
+            <div class="chart-panel">
+                <div class="panel-header">
+                    <h2>图表显示</h2>
+                    <div class="chart-controls">
+                        <button id="resetZoomButton" class="btn btn-small">重置缩放</button>
+                    </div>
+                </div>
+
+                <!-- Main Chart -->
+                <div id="mainChart" class="chart-container"></div>
+
+                <!-- Indicator Chart -->
+                <div id="indicatorChart" class="chart-container chart-small"></div>
+
+                <!-- Results Panel -->
+                <div class="results-panel">
+                    <h3>计算结果</h3>
+                    <div id="resultsDisplay" class="results-display">
+                        <p class="placeholder">执行公式后，结果将显示在此处...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Formula-TS v1.0.0 | 基于 TypeScript 的交易公式解析引擎</p>
+        </footer>
+    </div>
+
+    <script type="module" src="/demo/main.ts"></script>
+</body>
+</html>

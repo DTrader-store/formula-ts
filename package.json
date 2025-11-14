@@ -1,9 +1,20 @@
 {
-  "name": "formula-ts",
+  "name": "@dtrader/formula-ts",
   "version": "1.0.0",
-  "description": "A TypeScript implementation of a formula parser and interpreter",
+  "description": "A TypeScript implementation of a formula parser and interpreter for technical analysis and financial indicators. Supports TDX formula syntax.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "directories": {
     "doc": "docs"
   },
@@ -14,21 +25,46 @@
     "test:coverage": "jest --coverage",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/**/*.ts tests/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\""
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "prepublishOnly": "npm run build && npm test"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "formula",
+    "parser",
+    "interpreter",
+    "tdx",
+    "tongdaxin",
+    "technical-analysis",
+    "trading",
+    "indicators",
+    "moving-average",
+    "macd",
+    "typescript",
+    "financial"
+  ],
+  "author": "DTrader-store",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DTrader-store/formula-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DTrader-store/formula-ts/issues"
+  },
+  "homepage": "https://github.com/DTrader-store/formula-ts#readme",
   "type": "commonjs",
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.46.4",
     "@typescript-eslint/parser": "^8.46.4",
+    "@vitejs/plugin-vue": "^6.0.1",
     "eslint": "^9.39.1",
     "jest": "^30.2.0",
+    "lightweight-charts": "^5.0.9",
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.5",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2"
   }
 }

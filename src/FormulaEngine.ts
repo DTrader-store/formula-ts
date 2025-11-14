@@ -2,6 +2,7 @@ import { Lexer } from './lexer/Lexer';
 import { Parser } from './parser/Parser';
 import { Interpreter } from './interpreter/Interpreter';
 import { ExecutionContext } from './interpreter/Context';
+import { IncrementalContext } from './interpreter/IncrementalContext';
 import { FunctionRegistry } from './interpreter/FunctionRegistry';
 import { Program } from './parser/ast/nodes';
 import { MarketData } from './types/MarketData';
@@ -57,6 +58,99 @@ export class FormulaEngine {
     interpreter.visitProgram(ast);
 
     // Collect results
+    const outputs: OutputLine[] = [];
+    const outputsMap = context.getOutputs();
+
+    for (const [name, data] of outputsMap) {
+      outputs.push({
+        name,
+        data,
+      });
+    }
+
+    // Convert variables Map to Record
+    const variables: Record<string, number[]> = {};
+    const variablesMap = context.getVariables();
+    for (const [name, value] of variablesMap) {
+      variables[name] = value;
+    }
+
+    return {
+      outputs,
+      variables,
+    };
+  }
+
+  /**
+   * Evaluate a formula incrementally with new market data
+   * Only calculates values for new data points, reusing previous results
+   *
+   * @param formula Formula source code (must be the same as previous evaluation)
+   * @param newData Complete array of market data (old + new data)
+   * @param previousResult Previous formula result to build upon
+   * @returns Formula result containing outputs and variables
+   * @throws {LexerError} If lexical analysis fails
+   * @throws {ParserError} If parsing fails
+   * @throws {RuntimeError} If execution fails
+   *
+   * @example
+   * ```typescript
+   * // Initial evaluation with 100 data points
+   * const result1 = engine.evaluate(formula, marketData.slice(0, 100));
+   *
+   * // Add 10 new data points and evaluate incrementally
+   * const result2 = engine.evaluateIncremental(
+   *   formula,
+   *   marketData.slice(0, 110),
+   *   result1
+   * );
+   * // Only calculates for the 10 new points, much faster!
+   * ```
+   */
+  evaluateIncremental(
+    formula: string,
+    newData: MarketData[],
+    previousResult: FormulaResult,
+  ): FormulaResult {
+    // Validate inputs
+    if (!previousResult || !previousResult.outputs || previousResult.outputs.length === 0) {
+      throw new Error('Previous result is required for incremental evaluation');
+    }
+
+    const previousLength = previousResult.outputs[0].data.length;
+
+    if (newData.length < previousLength) {
+      throw new Error(
+        `New data (${newData.length} points) must have at least as many points as previous data (${previousLength} points)`,
+      );
+    }
+
+    // If no new data, return previous result
+    if (newData.length === previousLength) {
+      return previousResult;
+    }
+
+    // Parse the formula
+    const ast = this.parse(formula);
+
+    // Create incremental execution context
+    const context = new IncrementalContext(newData, this.registry, previousLength);
+
+    // Restore previous variables and outputs into context
+    for (const [name, value] of Object.entries(previousResult.variables)) {
+      context.restoreVariable(name, value);
+    }
+
+    for (const output of previousResult.outputs) {
+      context.restoreOutput(output.name, output.data);
+    }
+
+    // Create interpreter and execute
+    // The interpreter will use the context to only calculate new values
+    const interpreter = new Interpreter(context);
+    interpreter.visitProgram(ast);
+
+    // Collect results (will include both old and new data)
     const outputs: OutputLine[] = [];
     const outputsMap = context.getOutputs();
 

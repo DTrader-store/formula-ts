@@ -1,0 +1,52 @@
+{
+  "name": "tdx-formula-syntax",
+  "displayName": "TDX Formula Syntax Highlighting",
+  "description": "Syntax highlighting for TDX (Tongdaxin) formula language used in trading systems",
+  "version": "1.0.0",
+  "publisher": "DTrader-store",
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "keywords": [
+    "tdx",
+    "formula",
+    "trading",
+    "tongdaxin",
+    "syntax highlighting"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "tdx-formula",
+        "aliases": ["TDX Formula", "tdx-formula"],
+        "extensions": [".tdx", ".formula"],
+        "filenames": [],
+        "firstLine": "^\\s*(/|{)",
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "tdx-formula",
+        "scopeName": "source.tdx-formula",
+        "path": "./syntaxes/tdx-formula.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "tdx-formula",
+        "path": "./snippets/snippets.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DTrader-store/formula-ts"
+  },
+  "license": "MIT"
+}

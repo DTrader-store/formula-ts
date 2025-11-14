@@ -1,6 +1,10 @@
 # Formula-TS
 
-A TypeScript implementation of a formula parser and interpreter for technical analysis and financial indicators.
+[![npm version](https://img.shields.io/npm/v/@dtrader/formula-ts.svg)](https://www.npmjs.com/package/@dtrader/formula-ts)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
+
+A TypeScript implementation of a formula parser and interpreter for technical analysis and financial indicators. Supports TDX (Tongdaxin) formula syntax for trading and technical analysis.
 
 ## Features
 
@@ -35,8 +39,22 @@ A TypeScript implementation of a formula parser and interpreter for technical an
 
 ## Installation
 
+### NPM
+
 ```bash
-npm install formula-ts
+npm install @dtrader/formula-ts
+```
+
+### Yarn
+
+```bash
+yarn add @dtrader/formula-ts
+```
+
+### PNPM
+
+```bash
+pnpm add @dtrader/formula-ts
 ```
 
 ## Quick Start
@@ -44,7 +62,7 @@ npm install formula-ts
 ### Basic Usage
 
 ```typescript
-import { Lexer, Parser } from 'formula-ts';
+import { Lexer, Parser } from '@dtrader/formula-ts';
 
 // 1. Tokenize the formula
 const lexer = new Lexer('MA5:MA(CLOSE,5);');
@@ -60,7 +78,7 @@ console.log(ast);
 ### Working with Market Data
 
 ```typescript
-import { MarketData, validateMarketData } from 'formula-ts';
+import { MarketData, validateMarketData } from '@dtrader/formula-ts';
 
 const data: MarketData[] = [
   {
@@ -82,7 +100,7 @@ console.log('Data is valid:', isValid);
 ### Complete Example: MACD Indicator
 
 ```typescript
-import { Lexer, Parser } from 'formula-ts';
+import { Lexer, Parser } from '@dtrader/formula-ts';
 import * as fs from 'fs';
 
 // Load formula
@@ -491,11 +509,13 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 
 ## License
 
-ISC
+MIT License - see [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2025 DTrader-store
 
 ## Author
 
-DTrader-store
+[DTrader-store](https://github.com/DTrader-store)
 
 ## Version
 
@@ -511,7 +531,19 @@ DTrader-store
 - moving average
 - stock analysis
 - trading indicators
+- tdx
+- tongdaxin
 
 ## Support
 
 For issues and questions, please use the [GitHub Issues](https://github.com/DTrader-store/formula-ts/issues) page.
+
+## Publishing
+
+This package is published on NPM as [@dtrader/formula-ts](https://www.npmjs.com/package/@dtrader/formula-ts).
+
+To use the latest version, install it with your preferred package manager:
+
+```bash
+npm install @dtrader/formula-ts@latest
+```

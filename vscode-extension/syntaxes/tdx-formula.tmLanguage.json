@@ -1,0 +1,163 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "TDX Formula",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#functions"
+    },
+    {
+      "include": "#market-data"
+    },
+    {
+      "include": "#chart-attributes"
+    },
+    {
+      "include": "#punctuation"
+    },
+    {
+      "include": "#identifiers"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.tdx-formula",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.tdx-formula",
+          "begin": "\\{",
+          "end": "\\}",
+          "patterns": [
+            {
+              "include": "#comments"
+            }
+          ]
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.tdx-formula",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.tdx-formula",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.tdx-formula",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.tdx-formula",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.tdx-formula",
+          "match": "\\b\\d+\\.?\\d*\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assignment.tdx-formula",
+          "match": ":="
+        },
+        {
+          "name": "keyword.operator.comparison.tdx-formula",
+          "match": "(>=|<=|<>|>|<|=)"
+        },
+        {
+          "name": "keyword.operator.arithmetic.tdx-formula",
+          "match": "(\\+|-|\\*|/)"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.tdx-formula",
+          "match": "\\b(IF|THEN|ELSE)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.tdx-formula",
+          "match": "\\b(AND|OR|NOT)\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "support.function.tdx-formula",
+          "match": "\\b(MA|EMA|SUM|MAX|MIN|ABS|SQRT|POW|MOD|ROUND|REF|HHV|LLV|CROSS|EVERY|EXIST|BARSLAST|COUNT|STD|VAR|MEDIAN|AVEDEV|SMA|WMA|RSI|BOLL|ATR)\\b"
+        }
+      ]
+    },
+    "market-data": {
+      "patterns": [
+        {
+          "name": "constant.language.tdx-formula",
+          "match": "\\b(OPEN|CLOSE|HIGH|LOW|VOL|VOLUME|AMOUNT)\\b"
+        }
+      ]
+    },
+    "chart-attributes": {
+      "patterns": [
+        {
+          "name": "support.constant.tdx-formula",
+          "match": "\\b(COLORRED|COLORGREEN|COLORBLUE|COLORYELLOW|COLORWHITE|COLORBLACK|COLORCYAN|COLORMAGENTA|LINETHICK0|LINETHICK1|LINETHICK2|LINETHICK3|LINETHICK4|LINETHICK5|LINETHICK6|LINETHICK7|LINETHICK8|LINETHICK9|DOTLINE|STICK)\\b"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.tdx-formula",
+          "match": "[,;:]"
+        },
+        {
+          "name": "punctuation.bracket.round.tdx-formula",
+          "match": "[()]"
+        }
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {
+          "name": "variable.other.tdx-formula",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.tdx-formula"
+}

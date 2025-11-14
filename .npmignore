@@ -1,0 +1,49 @@
+# Development dependencies
+node_modules/
+npm-debug.log
+yarn.lock
+package-lock.json
+
+# Source code
+src/
+tests/
+
+# Build tools
+tsconfig.json
+jest.config.js
+.eslintrc.json
+.eslintignore
+.prettierrc.json
+.prettierignore
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+docs/
+examples/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+
+# Other
+.editorconfig
+.env
+.env.local
+*.tgz

@@ -1,0 +1,78 @@
+// TDX Formula Example File
+// Demonstrates syntax highlighting for various formula elements
+
+// Basic variable assignments
+MA5 := MA(CLOSE, 5);
+MA10 := MA(CLOSE, 10);
+MA20 := MA(CLOSE, 20);
+
+// Exponential Moving Average
+EMA12 := EMA(CLOSE, 12);
+EMA26 := EMA(CLOSE, 26);
+
+// MACD calculation
+MACD := EMA12 - EMA26;
+SIGNAL := EMA(MACD, 9);
+HISTOGRAM := MACD - SIGNAL;
+
+// Bollinger Bands components
+STD20 := STD(CLOSE, 20);
+MID := MA(CLOSE, 20);
+UPPER := MID + 2 * STD20;
+LOWER := MID - 2 * STD20;
+
+// RSI calculation
+RSI14 := RSI(CLOSE, 14);
+
+// Logic conditions
+IF(MA5 > MA10, 1, 0);
+IF(CLOSE > OPEN AND VOLUME > 1000000, 1, 0);
+
+// Reference values
+PREV_CLOSE := REF(CLOSE, 1);
+HIGH_20 := HHV(HIGH, 20);
+LOW_20 := LLV(LOW, 20);
+
+// Cross conditions
+GOLDEN_CROSS := CROSS(MA5, MA10);
+DEATH_CROSS := CROSS(MA10, MA5);
+
+// Counting conditions
+UP_COUNT := COUNT(CLOSE > OPEN, 5);
+LAST_UP := BARSLAST(CLOSE > OPEN);
+
+// Block comment for more complex logic
+{
+  Advanced technical analysis patterns
+  combining multiple conditions and functions
+}
+
+// Drawing with colors and styles
+MA5, COLORRED, LINETHICK2;
+MA10, COLORBLUE, LINETHICK1;
+MA20, COLORGREEN, DOTLINE;
+
+UPPER, COLORMAGENTA, LINETHICK1;
+LOWER, COLORMAGENTA, LINETHICK1;
+MID, COLORYELLOW, DOTLINE;
+
+// Signal with stick style
+IF(GOLDEN_CROSS, 100, 0), COLORGREEN, STICK;
+IF(DEATH_CROSS, -100, 0), COLORRED, STICK;
+
+// Advanced functions
+SMA_Result := SMA(CLOSE, 10, 3);
+WMA_Result := WMA(CLOSE, 5);
+MEDIAN_Value := MEDIAN(CLOSE, 20);
+
+// Conditional drawing
+IF(RSI14 > 70, UPPER, LOWER), COLORCYAN, LINETHICK2;
+
+// Complex multi-line logic
+VOLUME_MA := MA(VOLUME, 20);
+HIGH_VOLUME := VOLUME > VOLUME_MA * 1.5;
+PRICE_UP := CLOSE > REF(CLOSE, 1);
+BUY_SIGNAL := HIGH_VOLUME AND PRICE_UP AND MA5 > MA10;
+
+// Final output
+IF(BUY_SIGNAL, 1, IF(DEATH_CROSS, -1, 0))
