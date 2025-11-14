@@ -26,7 +26,9 @@
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/**/*.ts tests/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "demo": "npm run build && vite",
+    "demo:build": "npm run build && vite build"
   },
   "keywords": [
     "formula",
