@@ -25,12 +25,15 @@ describe('Interpreter', () => {
 
   beforeEach(() => {
     // Create sample market data
+    const baseTimestamp = new Date('2024-01-02T09:30:00.000Z').getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+
     marketData = [
-      { open: 100, close: 105, high: 110, low: 95, volume: 1000 },
-      { open: 105, close: 108, high: 112, low: 103, volume: 1200 },
-      { open: 108, close: 106, high: 109, low: 104, volume: 1100 },
-      { open: 106, close: 110, high: 115, low: 105, volume: 1300 },
-      { open: 110, close: 112, high: 116, low: 108, volume: 1400 },
+      { open: 100, close: 105, high: 110, low: 95, volume: 1000, timestamp: baseTimestamp },
+      { open: 105, close: 108, high: 112, low: 103, volume: 1200, timestamp: baseTimestamp + dayMs },
+      { open: 108, close: 106, high: 109, low: 104, volume: 1100, timestamp: baseTimestamp + 2 * dayMs },
+      { open: 106, close: 110, high: 115, low: 105, volume: 1300, timestamp: baseTimestamp + 3 * dayMs },
+      { open: 110, close: 112, high: 116, low: 108, volume: 1400, timestamp: baseTimestamp + 4 * dayMs },
     ];
 
     // Create function registry and register built-in functions

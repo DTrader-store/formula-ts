@@ -32,7 +32,7 @@ export class ExecutionContext {
 
   /**
    * Get market data array for a specific field
-   * @param field - Field name (OPEN, CLOSE, HIGH, LOW, VOLUME, AMOUNT)
+   * @param field - Field name (OPEN, CLOSE, HIGH, LOW, VOLUME, AMOUNT, TIMESTAMP, TRADABLESHARES, ADVANCE, DECLINE)
    * @returns Array of values for the field
    */
   getMarketDataField(field: string): number[] {
@@ -49,8 +49,16 @@ export class ExecutionContext {
         return this.marketData.map((d) => d.low);
       case 'VOLUME':
         return this.marketData.map((d) => d.volume);
+      case 'TIMESTAMP':
+        return this.marketData.map((d) => d.timestamp);
       case 'AMOUNT':
         return this.marketData.map((d) => d.amount ?? NaN);
+      case 'TRADABLESHARES':
+        return this.marketData.map((d) => d.tradableShares ?? NaN);
+      case 'ADVANCE':
+        return this.marketData.map((d) => d.advance ?? NaN);
+      case 'DECLINE':
+        return this.marketData.map((d) => d.decline ?? NaN);
       default:
         throw new Error(`Unknown market data field: ${field}`);
     }
@@ -140,6 +148,9 @@ export class ExecutionContext {
    */
   isMarketDataField(name: string): boolean {
     const upperName = name.toUpperCase();
-    return ['OPEN', 'CLOSE', 'HIGH', 'LOW', 'VOLUME', 'AMOUNT'].includes(upperName);
+    return [
+      'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VOLUME',
+      'TIMESTAMP', 'AMOUNT', 'TRADABLESHARES', 'ADVANCE', 'DECLINE'
+    ].includes(upperName);
   }
 }

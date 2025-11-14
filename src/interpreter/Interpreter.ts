@@ -15,6 +15,9 @@ import {
 } from '../parser/ast/nodes';
 import { ExecutionContext } from './Context';
 import * as functions from './functions';
+import * as marketDataFunctions from './functions/marketData';
+import * as datetimeFunctions from './functions/datetime';
+import * as periodFunctions from './functions/period';
 
 /**
  * Interpreter executes formulas by traversing the AST
@@ -281,6 +284,129 @@ export class Interpreter {
           throw new Error(`CROSS expects 2 arguments, got ${args.length}`);
         }
         return functions.CROSS(args[0], args[1]);
+
+      // Market data functions
+      case 'OPEN':
+        if (args.length !== 0) {
+          throw new Error(`OPEN expects 0 arguments, got ${args.length}`);
+        }
+        return marketDataFunctions.OPEN.execute(args, this.context);
+
+      case 'HIGH':
+        if (args.length !== 0) {
+          throw new Error(`HIGH expects 0 arguments, got ${args.length}`);
+        }
+        return marketDataFunctions.HIGH.execute(args, this.context);
+
+      case 'LOW':
+        if (args.length !== 0) {
+          throw new Error(`LOW expects 0 arguments, got ${args.length}`);
+        }
+        return marketDataFunctions.LOW.execute(args, this.context);
+
+      case 'CLOSE':
+        if (args.length !== 0) {
+          throw new Error(`CLOSE expects 0 arguments, got ${args.length}`);
+        }
+        return marketDataFunctions.CLOSE.execute(args, this.context);
+
+      case 'VOL':
+        if (args.length !== 0) {
+          throw new Error(`VOL expects 0 arguments, got ${args.length}`);
+        }
+        return marketDataFunctions.VOL.execute(args, this.context);
+
+      case 'AMOUNT':
+        if (args.length !== 0) {
+          throw new Error(`AMOUNT expects 0 arguments, got ${args.length}`);
+        }
+        return marketDataFunctions.AMOUNT.execute(args, this.context);
+
+      case 'ADVANCE':
+        if (args.length !== 0) {
+          throw new Error(`ADVANCE expects 0 arguments, got ${args.length}`);
+        }
+        return marketDataFunctions.ADVANCE.execute(args, this.context);
+
+      case 'DECLINE':
+        if (args.length !== 0) {
+          throw new Error(`DECLINE expects 0 arguments, got ${args.length}`);
+        }
+        return marketDataFunctions.DECLINE.execute(args, this.context);
+
+      // DateTime functions
+      case 'DATE':
+        if (args.length !== 0) {
+          throw new Error(`DATE expects 0 arguments, got ${args.length}`);
+        }
+        return datetimeFunctions.DATE(this.context.getMarketDataField('TIMESTAMP'));
+
+      case 'TIME':
+        if (args.length !== 0) {
+          throw new Error(`TIME expects 0 arguments, got ${args.length}`);
+        }
+        return datetimeFunctions.TIME(this.context.getMarketDataField('TIMESTAMP'));
+
+      case 'YEAR':
+        if (args.length !== 0) {
+          throw new Error(`YEAR expects 0 arguments, got ${args.length}`);
+        }
+        return datetimeFunctions.YEAR(this.context.getMarketDataField('TIMESTAMP'));
+
+      case 'MONTH':
+        if (args.length !== 0) {
+          throw new Error(`MONTH expects 0 arguments, got ${args.length}`);
+        }
+        return datetimeFunctions.MONTH(this.context.getMarketDataField('TIMESTAMP'));
+
+      case 'DAY':
+        if (args.length !== 0) {
+          throw new Error(`DAY expects 0 arguments, got ${args.length}`);
+        }
+        return datetimeFunctions.DAY(this.context.getMarketDataField('TIMESTAMP'));
+
+      case 'HOUR':
+        if (args.length !== 0) {
+          throw new Error(`HOUR expects 0 arguments, got ${args.length}`);
+        }
+        return datetimeFunctions.HOUR(this.context.getMarketDataField('TIMESTAMP'));
+
+      case 'MINUTE':
+        if (args.length !== 0) {
+          throw new Error(`MINUTE expects 0 arguments, got ${args.length}`);
+        }
+        return datetimeFunctions.MINUTE(this.context.getMarketDataField('TIMESTAMP'));
+
+      case 'WEEKDAY':
+        if (args.length !== 0) {
+          throw new Error(`WEEKDAY expects 0 arguments, got ${args.length}`);
+        }
+        return datetimeFunctions.WEEKDAY(this.context.getMarketDataField('TIMESTAMP'));
+
+      // Period functions
+      case 'PERIOD':
+        if (args.length !== 0) {
+          throw new Error(`PERIOD expects 0 arguments, got ${args.length}`);
+        }
+        return periodFunctions.PERIOD(this.context.getMarketDataField('TIMESTAMP'));
+
+      case 'BARSCOUNT':
+        if (args.length !== 0) {
+          throw new Error(`BARSCOUNT expects 0 arguments, got ${args.length}`);
+        }
+        return periodFunctions.BARSCOUNT(this.context.getDataLength());
+
+      case 'ISLASTBAR':
+        if (args.length !== 0) {
+          throw new Error(`ISLASTBAR expects 0 arguments, got ${args.length}`);
+        }
+        return periodFunctions.ISLASTBAR(this.context.getDataLength());
+
+      case 'BARSSINCE':
+        if (args.length !== 1) {
+          throw new Error(`BARSSINCE expects 1 argument, got ${args.length}`);
+        }
+        return periodFunctions.BARSSINCE(args[0]);
 
       default:
         throw new Error(`Unknown function: ${node.name}`);

@@ -98,5 +98,105 @@
     "prefix": "bcomment",
     "body": "{\n  ${1:comment}\n}",
     "description": "Block comment"
+  },
+  "Consecutive N Day Rise": {
+    "prefix": "upnday",
+    "body": "UPNDAY(${1:CLOSE}, ${2:3})",
+    "description": "Check for N consecutive rising days"
+  },
+  "Consecutive N Day Fall": {
+    "prefix": "downnday",
+    "body": "DOWNNDAY(${1:CLOSE}, ${2:3})",
+    "description": "Check for N consecutive falling days"
+  },
+  "N Day Condition": {
+    "prefix": "nday",
+    "body": "NDAY(${1:condition}, ${2:3})",
+    "description": "Check if condition holds for N days"
+  },
+  "Range Check": {
+    "prefix": "range",
+    "body": "RANGE(${1:value}, ${2:min}, ${3:max})",
+    "description": "Check if value is in range"
+  },
+  "Winner Ratio": {
+    "prefix": "winner",
+    "body": "WINNER(CLOSE, VOLUME, ${1:CLOSE}, ${2:100})",
+    "description": "Calculate profit ratio at price level"
+  },
+  "Value When": {
+    "prefix": "valuewhen",
+    "body": "VALUEWHEN(${1:condition}, ${2:value})",
+    "description": "Get value when condition first true"
+  },
+  "Top Range": {
+    "prefix": "toprange",
+    "body": "TOPRANGE(${1:HIGH}, ${2:20})",
+    "description": "Check if value is new high"
+  },
+  "Low Range": {
+    "prefix": "lowrange",
+    "body": "LOWRANGE(${1:LOW}, ${2:20})",
+    "description": "Check if value is new low"
+  },
+  "Year Filter": {
+    "prefix": "year",
+    "body": "YEAR = ${1:2024}",
+    "description": "Filter by year"
+  },
+  "Month Filter": {
+    "prefix": "month",
+    "body": "MONTH = ${1:1}",
+    "description": "Filter by month"
+  },
+  "Time Filter": {
+    "prefix": "timefilter",
+    "body": "YEAR = ${1:2024} AND MONTH >= ${2:1}",
+    "description": "Filter by time period"
+  },
+  "Weekday Filter": {
+    "prefix": "weekday",
+    "body": "WEEKDAY = ${1:1}",
+    "description": "Filter by weekday (1=Mon, 7=Sun)"
+  },
+  "Bars Since": {
+    "prefix": "barssince",
+    "body": "BARSSINCE(${1:condition})",
+    "description": "Count bars since condition first true"
+  },
+  "Is Last Bar": {
+    "prefix": "islastbar",
+    "body": "ISLASTBAR",
+    "description": "Check if current bar is last"
+  },
+  "Consecutive Rise Strategy": {
+    "prefix": "strat-uptrend",
+    "body": [
+      "UP3 := UPNDAY(CLOSE, 3);",
+      "VOL_UP := VOLUME > MA(VOLUME, 5) * 1.2;",
+      "SIGNAL: UP3 AND VOL_UP;"
+    ],
+    "description": "Strategy: consecutive rise with volume confirmation"
+  },
+  "Time Filtered MA Cross": {
+    "prefix": "strat-timefilter",
+    "body": [
+      "TIME_OK := YEAR = ${1:2024} AND MONTH >= ${2:1};",
+      "MA5 := MA(CLOSE, 5);",
+      "MA10 := MA(CLOSE, 10);",
+      "GOLDEN := CROSS(MA5, MA10);",
+      "SIGNAL: TIME_OK AND GOLDEN;"
+    ],
+    "description": "Strategy: time-filtered MA crossover"
+  },
+  "Profit Analysis Strategy": {
+    "prefix": "strat-winner",
+    "body": [
+      "WIN_RATIO := WINNER(CLOSE, VOLUME, CLOSE);",
+      "LOW_WIN := WIN_RATIO < 0.3;",
+      "NEW_HIGH := TOPRANGE(HIGH, 20);",
+      "BUY: LOW_WIN AND NEW_HIGH;"
+    ],
+    "description": "Strategy: profit analysis with breakout"
   }
 }

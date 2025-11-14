@@ -21,17 +21,16 @@ A TypeScript implementation of a formula parser and interpreter for technical an
   - Variable assignments
   - Nested expressions
 
-- **Powerful Interpreter**: Execute formulas with 10 core functions:
-  - **MA**: Simple Moving Average
-  - **EMA**: Exponential Moving Average
-  - **SUM**: Summation over N periods
-  - **MAX**: Element-wise maximum
-  - **MIN**: Element-wise minimum
-  - **REF**: Reference value N periods ago
-  - **HHV**: Highest High Value over N periods
-  - **LLV**: Lowest Low Value over N periods
-  - **IF**: Conditional selection
-  - **CROSS**: Crossover detection
+- **Powerful Interpreter**: Execute formulas with 55 built-in functions:
+  - **Math & Statistics** (14): MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND, STD, VAR, MEDIAN, AVEDEV
+  - **Reference & Comparison** (3): REF, HHV, LLV
+  - **Logical Operations** (6): IF, CROSS, EVERY, EXIST, BARSLAST, COUNT
+  - **Technical Analysis** (3): SMA, WMA, RSI
+  - **Pattern Detection** (5): UPNDAY, DOWNNDAY, NDAY, RANGE, BETWEEN
+  - **Chip Distribution** (6): WINNER, LWINNER, COST, VALUEWHEN, TOPRANGE, LOWRANGE
+  - **Market Data Access** (8): OPEN, HIGH, LOW, CLOSE, VOL, AMOUNT, ADVANCE, DECLINE
+  - **Time Functions** (8): DATE, TIME, YEAR, MONTH, DAY, HOUR, MINUTE, WEEKDAY
+  - **Period Functions** (4): PERIOD, BARSCOUNT, ISLASTBAR, BARSSINCE
 
 - **Incremental Calculation**: Optimize performance for streaming data
   - 50-200% faster than full recalculation
@@ -404,6 +403,228 @@ Crossover - detects when A crosses above B.
 
 ```
 GOLDEN:CROSS(MA5,MA10);
+```
+
+### UPNDAY(data, n)
+Consecutive N Day Rise - returns 1 when price rises for N consecutive days.
+
+```
+UP3:UPNDAY(CLOSE,3);  # 3 consecutive rising days
+```
+
+### DOWNNDAY(data, n)
+Consecutive N Day Fall - returns 1 when price falls for N consecutive days.
+
+```
+DOWN2:DOWNNDAY(CLOSE,2);  # 2 consecutive falling days
+```
+
+### NDAY(condition, n)
+Condition Continuous N Days - returns 1 when condition is true for N consecutive days.
+
+```
+BULLISH:=CLOSE>OPEN;
+BULL3:NDAY(BULLISH,3);  # Bullish for 3 days
+```
+
+### RANGE(A, B, C) / BETWEEN(A, B, C)
+Range Check - returns 1 when A is between B and C.
+
+```
+IN_RANGE:RANGE(CLOSE,100,110);  # Close between 100-110
+```
+
+### WINNER(close, volume, targetPrice, [lookback])
+Profit Ratio - calculates the ratio of shares profitable at the target price.
+
+- **Parameters**:
+  - `close`: Close price array
+  - `volume`: Volume array
+  - `targetPrice`: Price level to calculate profit ratio
+  - `lookback`: Optional, lookback period (default 100)
+- **Returns**: Profit ratio (0-1)
+
+```
+WIN_RATIO:WINNER(CLOSE,VOLUME,CLOSE,50);
+```
+
+### LWINNER(close, volume, targetPrice, [lookback])
+Floating Profit Ratio - similar to WINNER but with shorter lookback (default 20).
+
+```
+FLOAT_WIN:LWINNER(CLOSE,VOLUME,CLOSE);
+```
+
+### COST(close, volume, percent, [lookback])
+Cost Distribution - returns the price level at which percent of shares are profitable.
+
+```
+COST70:COST(CLOSE,VOLUME,70);  # Price at 70% profit
+```
+
+### VALUEWHEN(condition, X)
+Value When - returns the value of X when condition is first true.
+
+```
+CROSS_UP:=CROSS(MA5,MA10);
+BUY_PRICE:VALUEWHEN(CROSS_UP,CLOSE);
+```
+
+### TOPRANGE(X, [period])
+New High - returns 1 when X reaches a new high over the period (default 20).
+
+```
+NEW_HIGH:TOPRANGE(HIGH,20);
+```
+
+### LOWRANGE(X, [period])
+New Low - returns 1 when X reaches a new low over the period (default 20).
+
+```
+NEW_LOW:LOWRANGE(LOW,20);
+```
+
+### OPEN
+Opening Price - returns the opening price array.
+
+```
+O:OPEN;
+```
+
+### HIGH
+Highest Price - returns the highest price array.
+
+```
+H:HIGH;
+```
+
+### LOW
+Lowest Price - returns the lowest price array.
+
+```
+L:LOW;
+```
+
+### CLOSE
+Closing Price - returns the closing price array.
+
+```
+C:CLOSE;
+```
+
+### VOL
+Trading Volume - returns the trading volume array.
+
+```
+V:VOL;
+```
+
+### AMOUNT
+Trading Amount - returns the trading amount array (requires `amount` field in market data).
+
+```
+A:AMOUNT;
+```
+
+### ADVANCE
+Advancing Stocks - returns the number of advancing stocks (index data only).
+
+```
+ADV:ADVANCE;
+```
+
+### DECLINE
+Declining Stocks - returns the number of declining stocks (index data only).
+
+```
+DEC:DECLINE;
+```
+
+### DATE
+Date - returns date in YYYYMMDD format.
+
+```
+D:DATE;  # 20240115
+```
+
+### TIME
+Time - returns time in HHMMSS format.
+
+```
+T:TIME;  # 093000
+```
+
+### YEAR
+Year - extracts year from timestamp.
+
+```
+Y:YEAR;  # 2024
+```
+
+### MONTH
+Month - extracts month from timestamp (1-12).
+
+```
+M:MONTH;  # 1=January, 12=December
+```
+
+### DAY
+Day - extracts day of month from timestamp (1-31).
+
+```
+D:DAY;
+```
+
+### HOUR
+Hour - extracts hour from timestamp (0-23).
+
+```
+H:HOUR;
+```
+
+### MINUTE
+Minute - extracts minute from timestamp (0-59).
+
+```
+MIN:MINUTE;
+```
+
+### WEEKDAY
+Weekday - returns day of week (1-7, 1=Monday, 7=Sunday).
+
+```
+WD:WEEKDAY;
+```
+
+### PERIOD
+Period Type - automatically detects the period type from timestamps.
+
+- **Returns**: Period code (1=1min, 5=5min, 15=15min, 30=30min, 60=1hour, 101=daily, 102=weekly, 103=monthly)
+
+```
+P:PERIOD;
+```
+
+### BARSCOUNT
+Total Bars - returns the total number of bars in the data.
+
+```
+BC:BARSCOUNT;
+```
+
+### ISLASTBAR
+Is Last Bar - returns 1 for the last bar, 0 for all others.
+
+```
+LAST:ISLASTBAR;
+```
+
+### BARSSINCE(condition)
+Bars Since - counts bars since the first time condition was true.
+
+```
+GOLDEN:=CROSS(MA5,MA10);
+HOLD:BARSSINCE(GOLDEN);
 ```
 
 ## Examples

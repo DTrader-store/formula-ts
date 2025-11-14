@@ -118,7 +118,7 @@
       "patterns": [
         {
           "name": "support.function.tdx-formula",
-          "match": "\\b(MA|EMA|SUM|MAX|MIN|ABS|SQRT|POW|MOD|ROUND|REF|HHV|LLV|CROSS|EVERY|EXIST|BARSLAST|COUNT|STD|VAR|MEDIAN|AVEDEV|SMA|WMA|RSI|BOLL|ATR)\\b"
+          "match": "\\b(MA|EMA|SUM|MAX|MIN|ABS|SQRT|POW|MOD|ROUND|REF|HHV|LLV|CROSS|EVERY|EXIST|BARSLAST|COUNT|STD|VAR|MEDIAN|AVEDEV|SMA|WMA|RSI|BOLL|ATR|UPNDAY|DOWNNDAY|NDAY|RANGE|BETWEEN|WINNER|LWINNER|COST|VALUEWHEN|TOPRANGE|LOWRANGE|DATE|TIME|YEAR|MONTH|DAY|HOUR|MINUTE|WEEKDAY|PERIOD|BARSCOUNT|ISLASTBAR|BARSSINCE)\\b"
         }
       ]
     },
@@ -126,7 +126,7 @@
       "patterns": [
         {
           "name": "constant.language.tdx-formula",
-          "match": "\\b(OPEN|CLOSE|HIGH|LOW|VOL|VOLUME|AMOUNT)\\b"
+          "match": "\\b(OPEN|CLOSE|HIGH|LOW|VOL|VOLUME|AMOUNT|ADVANCE|DECLINE)\\b"
         }
       ]
     },

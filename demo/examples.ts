@@ -72,7 +72,74 @@ GOLDEN: CROSS(SHORT, LONG);
 
 DRAW SHORT, COLOR: RED;
 DRAW LONG, COLOR: BLUE;
-DRAW GOLDEN, COLOR: YELLOW;`
+DRAW GOLDEN, COLOR: YELLOW;`,
+
+  uptrend: `// 连续上涨检测
+// 检测连续3天上涨的K线
+UP3: UPNDAY(CLOSE, 3);
+
+// 同时成交量放大
+VOL_UP: VOLUME > MA(VOLUME, 5) * 1.2;
+
+// 综合信号
+SIGNAL: UP3 AND VOL_UP;
+
+DRAW UP3, COLOR: GREEN;
+DRAW SIGNAL, COLOR: YELLOW;`,
+
+  timefilter: `// 时间过滤策略
+// 2024年的数据
+TIME_FILTER: YEAR = 2024;
+
+// MA金叉
+MA5: MA(CLOSE, 5);
+MA10: MA(CLOSE, 10);
+GOLDEN_CROSS: CROSS(MA5, MA10);
+
+// 带时间过滤的信号
+SIGNAL: TIME_FILTER AND GOLDEN_CROSS;
+
+DRAW MA5, COLOR: RED;
+DRAW MA10, COLOR: BLUE;
+DRAW SIGNAL, COLOR: YELLOW;`,
+
+  winner: `// 获利盘分析
+// 获利盘比例
+WINNER_RATIO: WINNER(CLOSE, VOLUME, CLOSE);
+
+// 套牢盘较多（获利盘少于30%）
+LOW_WINNER: WINNER_RATIO < 0.3;
+
+// 创20天新高
+NEW_HIGH: TOPRANGE(HIGH, 20);
+
+// 突破买入信号
+BUY: LOW_WINNER AND NEW_HIGH;
+
+DRAW WINNER_RATIO, COLOR: BLUE;
+DRAW BUY, COLOR: YELLOW;`,
+
+  comprehensive: `// 综合交易策略
+// 均线系统
+MA5 := MA(CLOSE, 5);
+MA10 := MA(CLOSE, 10);
+GOLDEN := CROSS(MA5, MA10);
+
+// 买入价格
+BUY_PRICE := VALUEWHEN(GOLDEN, CLOSE);
+
+// 盈利百分比
+PROFIT := (CLOSE - BUY_PRICE) / BUY_PRICE * 100;
+
+// 持仓天数
+HOLD_DAYS := BARSSINCE(GOLDEN);
+
+// 卖出信号：盈利超过5%或持仓超过10天
+SELL: PROFIT > 5 OR HOLD_DAYS > 10;
+
+DRAW MA5, COLOR: RED;
+DRAW MA10, COLOR: BLUE;
+DRAW SELL, COLOR: YELLOW;`
 };
 
 /**
@@ -155,7 +222,11 @@ export function getFormulaDescription(key: string): string {
     kdj: 'KDJ 是随机指标，用于识别超买和超卖条件。',
     boll: '布林带使用标准差来定义价格的高低区间，识别波动性。',
     rsi: 'RSI 测量价格变动的速度和变化，识别超买和超卖水平。',
-    custom: '自定义策略示例，展示如何使用双均线交叉来生成交易信号。'
+    custom: '自定义策略示例，展示如何使用双均线交叉来生成交易信号。',
+    uptrend: '连续上涨检测，结合成交量放大确认，识别强势上涨趋势。',
+    timefilter: '时间过滤策略，在特定时间范围内寻找MA金叉信号。',
+    winner: '获利盘分析，通过筹码分布判断套牢盘情况，捕捉突破机会。',
+    comprehensive: '综合交易策略，包含买入、持仓、止盈止损的完整逻辑。'
   };
 
   return descriptions[key] || '自定义公式';

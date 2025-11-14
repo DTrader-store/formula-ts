@@ -10,17 +10,20 @@ describe('FormulaEngine - End-to-End Integration Tests', () => {
     engine = new FormulaEngine();
 
     // Sample market data for testing
+    const baseTimestamp = new Date('2024-01-02T09:30:00.000Z').getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+
     marketData = [
-      { open: 100, close: 102, high: 105, low: 99, volume: 1000 },
-      { open: 102, close: 101, high: 103, low: 100, volume: 1100 },
-      { open: 101, close: 103, high: 106, low: 101, volume: 1200 },
-      { open: 103, close: 105, high: 107, low: 102, volume: 1300 },
-      { open: 105, close: 104, high: 106, low: 103, volume: 1400 },
-      { open: 104, close: 106, high: 108, low: 104, volume: 1500 },
-      { open: 106, close: 108, high: 110, low: 105, volume: 1600 },
-      { open: 108, close: 107, high: 109, low: 106, volume: 1700 },
-      { open: 107, close: 109, high: 111, low: 107, volume: 1800 },
-      { open: 109, close: 110, high: 112, low: 108, volume: 1900 },
+      { open: 100, close: 102, high: 105, low: 99, volume: 1000, timestamp: baseTimestamp },
+      { open: 102, close: 101, high: 103, low: 100, volume: 1100, timestamp: baseTimestamp + dayMs },
+      { open: 101, close: 103, high: 106, low: 101, volume: 1200, timestamp: baseTimestamp + 2 * dayMs },
+      { open: 103, close: 105, high: 107, low: 102, volume: 1300, timestamp: baseTimestamp + 3 * dayMs },
+      { open: 105, close: 104, high: 106, low: 103, volume: 1400, timestamp: baseTimestamp + 4 * dayMs },
+      { open: 104, close: 106, high: 108, low: 104, volume: 1500, timestamp: baseTimestamp + 5 * dayMs },
+      { open: 106, close: 108, high: 110, low: 105, volume: 1600, timestamp: baseTimestamp + 6 * dayMs },
+      { open: 108, close: 107, high: 109, low: 106, volume: 1700, timestamp: baseTimestamp + 7 * dayMs },
+      { open: 107, close: 109, high: 111, low: 107, volume: 1800, timestamp: baseTimestamp + 8 * dayMs },
+      { open: 109, close: 110, high: 112, low: 108, volume: 1900, timestamp: baseTimestamp + 9 * dayMs },
     ];
   });
 
@@ -387,6 +390,369 @@ describe('FormulaEngine - End-to-End Integration Tests', () => {
       expect(ast.body[1].type).toBe('VariableDeclaration');
       expect(ast.body[2].type).toBe('OutputDeclaration');
       expect(ast.body[3].type).toBe('OutputDeclaration');
+    });
+  });
+
+  describe('New Functions Integration Tests - Phase 4 Stage 1', () => {
+    describe('Market Data Accessor Functions', () => {
+      it('should access basic OHLC fields', () => {
+        const formula = `
+          O: OPEN;
+          H: HIGH;
+          L: LOW;
+          C: CLOSE;
+          V: VOL;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(5);
+        expect(result.outputs[0].data[0]).toBe(100);
+        expect(result.outputs[1].data[0]).toBe(105);
+        expect(result.outputs[2].data[0]).toBe(99);
+        expect(result.outputs[3].data[0]).toBe(102);
+        expect(result.outputs[4].data[0]).toBe(1000);
+      });
+
+      it('should calculate with market data functions', () => {
+        const formula = `
+          BODY: CLOSE - OPEN;
+          RANGE: HIGH - LOW;
+          BULLISH: IF(CLOSE > OPEN, 1, 0);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(3);
+        expect(result.outputs[0].data[0]).toBe(2); // 102 - 100
+        expect(result.outputs[1].data[0]).toBe(6); // 105 - 99
+        expect(result.outputs[2].data[0]).toBe(1); // close > open
+      });
+    });
+
+    describe('Pattern Functions', () => {
+      it('should detect consecutive rises with UPNDAY', () => {
+        const formula = `
+          UP3: UPNDAY(CLOSE, 3);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+        // First 3 values should be 0 (not enough data)
+        expect(result.outputs[0].data[0]).toBe(0);
+        expect(result.outputs[0].data[1]).toBe(0);
+        expect(result.outputs[0].data[2]).toBe(0);
+      });
+
+      it('should detect consecutive falls with DOWNNDAY', () => {
+        const formula = `
+          DOWN2: DOWNNDAY(CLOSE, 2);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+
+      it('should check range with RANGE function', () => {
+        const formula = `
+          IN_RANGE: RANGE(CLOSE, 100, 110);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        // All closes should be in range 100-110
+        for (let i = 0; i < 10; i++) {
+          expect(result.outputs[0].data[i]).toBe(1);
+        }
+      });
+
+      it('should use NDAY for custom conditions', () => {
+        const formula = `
+          BULLISH := CLOSE > OPEN;
+          BULL3: NDAY(BULLISH, 3);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+    });
+
+    describe('Combined Pattern and MA Strategies', () => {
+      it('should combine UPNDAY with MA crossover', () => {
+        const formula = `
+          MA5 := MA(CLOSE, 5);
+          MA10 := MA(CLOSE, 10);
+          UP3 := UPNDAY(CLOSE, 3);
+          GOLDEN := CROSS(MA5, MA10);
+          SIGNAL: UP3 AND GOLDEN;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].name).toBe('SIGNAL');
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+
+      it('should filter signals by price range', () => {
+        const formula = `
+          MA5 := MA(CLOSE, 5);
+          CROSS_UP := CROSS(MA5, MA(CLOSE, 10));
+          PRICE_OK := RANGE(CLOSE, 105, 115);
+          BUY: CROSS_UP AND PRICE_OK;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+    });
+
+    describe('Time Functions Integration', () => {
+      it('should extract date components', () => {
+        const formula = `
+          Y: YEAR;
+          M: MONTH;
+          D: DAY;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(3);
+        // Should extract year 2024
+        expect(result.outputs[0].data[0]).toBe(2024);
+        // Should extract month 1 (January)
+        expect(result.outputs[1].data[0]).toBe(1);
+        // Should extract day 2
+        expect(result.outputs[2].data[0]).toBe(2);
+      });
+
+      it('should get date in YYYYMMDD format', () => {
+        const formula = `
+          D: DATE;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        // Should return 20240102
+        expect(result.outputs[0].data[0]).toBe(20240102);
+      });
+
+      it('should filter by time period', () => {
+        const formula = `
+          YEAR_FILTER := YEAR = 2024;
+          MONTH_FILTER := MONTH >= 1;
+          TIME_OK: YEAR_FILTER AND MONTH_FILTER;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        // All data points should pass time filter
+        for (let i = 0; i < 10; i++) {
+          expect(result.outputs[0].data[i]).toBe(1);
+        }
+      });
+
+      it('should get weekday', () => {
+        const formula = `
+          WD: WEEKDAY;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        // January 2, 2024 is a Tuesday (2)
+        expect(result.outputs[0].data[0]).toBe(2);
+      });
+    });
+
+    describe('Period Functions Integration', () => {
+      it('should detect period type', () => {
+        const formula = `
+          P: PERIOD;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        // Should detect daily period (101)
+        expect(result.outputs[0].data[0]).toBe(101);
+      });
+
+      it('should count total bars', () => {
+        const formula = `
+          BC: BARSCOUNT;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        // All positions should show total count of 10
+        for (let i = 0; i < 10; i++) {
+          expect(result.outputs[0].data[i]).toBe(10);
+        }
+      });
+
+      it('should identify last bar', () => {
+        const formula = `
+          LAST: ISLASTBAR;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        // Only last bar should be 1
+        for (let i = 0; i < 9; i++) {
+          expect(result.outputs[0].data[i]).toBe(0);
+        }
+        expect(result.outputs[0].data[9]).toBe(1);
+      });
+
+      it('should count bars since condition', () => {
+        const formula = `
+          GOLDEN := CROSS(MA(CLOSE, 5), MA(CLOSE, 10));
+          BARS: BARSSINCE(GOLDEN);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+    });
+
+    describe('Chip Distribution Functions', () => {
+      it('should calculate profit ratio with WINNER', () => {
+        const formula = `
+          PROFIT: WINNER(CLOSE, VOLUME, CLOSE);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+        // Values should be between 0 and 1
+        for (let i = 0; i < 10; i++) {
+          expect(result.outputs[0].data[i]).toBeGreaterThanOrEqual(0);
+          expect(result.outputs[0].data[i]).toBeLessThanOrEqual(1);
+        }
+      });
+
+      it('should track value when condition met', () => {
+        const formula = `
+          CROSS_UP := CROSS(MA(CLOSE, 5), MA(CLOSE, 10));
+          BUY_PRICE: VALUEWHEN(CROSS_UP, CLOSE);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+
+      it('should detect new high with TOPRANGE', () => {
+        const formula = `
+          NEW_HIGH: TOPRANGE(HIGH);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+
+      it('should detect new low with LOWRANGE', () => {
+        const formula = `
+          NEW_LOW: LOWRANGE(LOW);
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+    });
+
+    describe('Complex Real-World Scenarios', () => {
+      it('should implement time-filtered MA strategy', () => {
+        const formula = `
+          TIME_OK := YEAR = 2024 AND MONTH >= 1;
+          MA5 := MA(CLOSE, 5);
+          MA10 := MA(CLOSE, 10);
+          GOLDEN := CROSS(MA5, MA10);
+          SIGNAL: TIME_OK AND GOLDEN;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.variables).toHaveProperty('TIME_OK');
+        expect(result.variables).toHaveProperty('GOLDEN');
+      });
+
+      it('should implement consecutive rise with volume confirmation', () => {
+        const formula = `
+          UP3 := UPNDAY(CLOSE, 3);
+          VOL_UP := VOLUME > MA(VOLUME, 5) * 1.2;
+          SIGNAL: UP3 AND VOL_UP;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+
+      it('should implement profit analysis strategy', () => {
+        const formula = `
+          WIN_RATIO := WINNER(CLOSE, VOLUME, CLOSE);
+          LOW_WIN := WIN_RATIO < 0.3;
+          NEW_HIGH := TOPRANGE(HIGH, 20);
+          BUY: LOW_WIN AND NEW_HIGH;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.variables).toHaveProperty('WIN_RATIO');
+        expect(result.variables).toHaveProperty('LOW_WIN');
+      });
+
+      it('should implement comprehensive trading strategy', () => {
+        const formula = `
+          MA5 := MA(CLOSE, 5);
+          MA10 := MA(CLOSE, 10);
+          GOLDEN := CROSS(MA5, MA10);
+          BUY_PRICE := VALUEWHEN(GOLDEN, CLOSE);
+          PROFIT := (CLOSE - BUY_PRICE) / BUY_PRICE * 100;
+          HOLD_DAYS := BARSSINCE(GOLDEN);
+          SELL: PROFIT > 5 OR HOLD_DAYS > 10;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].name).toBe('SELL');
+        expect(result.variables).toHaveProperty('MA5');
+        expect(result.variables).toHaveProperty('PROFIT');
+        expect(result.variables).toHaveProperty('HOLD_DAYS');
+      });
+
+      it('should combine pattern, time, and volume analysis', () => {
+        const formula = `
+          YEAR_OK := YEAR = 2024;
+          UP3 := UPNDAY(CLOSE, 3);
+          PRICE_RANGE := RANGE(CLOSE, 100, 115);
+          VOL_HIGH := VOLUME > REF(VOLUME, 1) * 1.5;
+          STRONG_BUY: YEAR_OK AND UP3 AND PRICE_RANGE AND VOL_HIGH;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.outputs[0].data).toHaveLength(10);
+      });
+
+      it('should implement breakout detection with chip analysis', () => {
+        const formula = `
+          HH := HHV(HIGH, 20);
+          BREAKOUT := HIGH > REF(HH, 1);
+          WIN_RATIO := WINNER(CLOSE, VOLUME, CLOSE);
+          LOW_PROFIT := WIN_RATIO < 0.3;
+          BUY: BREAKOUT AND LOW_PROFIT;
+        `;
+        const result = engine.evaluate(formula, marketData);
+
+        expect(result.outputs).toHaveLength(1);
+        expect(result.variables).toHaveProperty('HH');
+        expect(result.variables).toHaveProperty('BREAKOUT');
+        expect(result.variables).toHaveProperty('WIN_RATIO');
+      });
     });
   });
 });

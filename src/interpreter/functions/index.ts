@@ -4,6 +4,9 @@ import { REF, HHV, LLV } from './reference';
 import { IF, CROSS, EVERY, EXIST, BARSLAST, COUNT } from './logical';
 import { STD, VAR, MEDIAN, AVEDEV } from './statistics';
 import { SMA, WMA, RSI } from './technical';
+import { UPNDAY, DOWNNDAY, NDAY, RANGE, BETWEEN } from './pattern';
+import { WINNER, LWINNER, COST, VALUEWHEN, TOPRANGE, LOWRANGE } from './chip';
+import { getAllMarketDataFunctions } from './marketData';
 
 // Export all functions
 export { MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND } from './math';
@@ -11,6 +14,11 @@ export { REF, HHV, LLV } from './reference';
 export { IF, CROSS, EVERY, EXIST, BARSLAST, COUNT } from './logical';
 export { STD, VAR, MEDIAN, AVEDEV } from './statistics';
 export { SMA, WMA, BOLL, RSI, ATR } from './technical';
+export { UPNDAY, DOWNNDAY, NDAY, RANGE, BETWEEN } from './pattern';
+export { WINNER, LWINNER, COST, VALUEWHEN, TOPRANGE, LOWRANGE } from './chip';
+export { OPEN, HIGH, LOW, CLOSE, VOL, AMOUNT, ADVANCE, DECLINE, getAllMarketDataFunctions } from './marketData';
+export { DATE, TIME, YEAR, MONTH, DAY, HOUR, MINUTE, WEEKDAY } from './datetime';
+export { PERIOD, BARSCOUNT, ISLASTBAR, BARSSINCE } from './period';
 
 /**
  * Helper function to create a FormulaFunction wrapper for array-based functions
@@ -85,4 +93,69 @@ export function registerBuiltinFunctions(registry: FunctionRegistry): void {
   // Note: BOLL and ATR require special handling in the interpreter
   // BOLL returns 3 arrays [upper, middle, lower]
   // ATR requires 3 input arrays (high, low, close)
+
+  // Pattern functions
+  registry.register(createArrayFunction('UPNDAY', 2, 2, (close, n) => UPNDAY(close, n[0])));
+  registry.register(createArrayFunction('DOWNNDAY', 2, 2, (close, n) => DOWNNDAY(close, n[0])));
+  registry.register(createArrayFunction('NDAY', 2, 2, (cond, n) => NDAY(cond, n[0])));
+  registry.register(createArrayFunction('RANGE', 3, 3, (A, B, C) => RANGE(A, B, C)));
+  registry.register(createArrayFunction('BETWEEN', 3, 3, (A, B, C) => BETWEEN(A, B, C)));
+
+  // Chip distribution and value functions
+  registry.register(createArrayFunction('WINNER', 3, 4, (close, volume, targetPrice, lookback) =>
+    WINNER(close, volume, targetPrice, lookback ? lookback[0] : undefined)
+  ));
+  registry.register(createArrayFunction('LWINNER', 3, 4, (close, volume, targetPrice, lookback) =>
+    LWINNER(close, volume, targetPrice, lookback ? lookback[0] : undefined)
+  ));
+  registry.register(createArrayFunction('COST', 3, 4, (close, volume, percent, lookback) =>
+    COST(close, volume, percent, lookback ? lookback[0] : undefined)
+  ));
+  registry.register(createArrayFunction('VALUEWHEN', 2, 2, (cond, X) => VALUEWHEN(cond, X)));
+  registry.register(createArrayFunction('TOPRANGE', 1, 2, (X, period) =>
+    TOPRANGE(X, period ? period[0] : undefined)
+  ));
+  registry.register(createArrayFunction('LOWRANGE', 1, 2, (X, period) =>
+    LOWRANGE(X, period ? period[0] : undefined)
+  ));
+
+  // Market data accessor functions (registered separately due to ExecutionContext requirement)
+  const marketDataFunctions = getAllMarketDataFunctions();
+  for (const func of marketDataFunctions) {
+    registry.register(func as unknown as FormulaFunction);
+  }
+
+  // Time and period functions registration
+  // Note: These require access to timestamp field from MarketData via ExecutionContext
+  // TODO: Implement proper context-aware function registration for time/period functions
+  // For now, they are exported but not registered in the legacy registry
+}
+
+/**
+ * Get all registered function names
+ * @returns Array of function names
+ */
+export function getAllFunctions(): string[] {
+  return [
+    // Math functions (10)
+    'MA', 'EMA', 'SUM', 'MAX', 'MIN', 'ABS', 'SQRT', 'POW', 'MOD', 'ROUND',
+    // Reference functions (3)
+    'REF', 'HHV', 'LLV',
+    // Logical functions (6)
+    'IF', 'CROSS', 'EVERY', 'EXIST', 'BARSLAST', 'COUNT',
+    // Statistical functions (4)
+    'STD', 'VAR', 'MEDIAN', 'AVEDEV',
+    // Technical analysis functions (3)
+    'SMA', 'WMA', 'RSI',
+    // Pattern functions (5)
+    'UPNDAY', 'DOWNNDAY', 'NDAY', 'RANGE', 'BETWEEN',
+    // Chip distribution functions (6)
+    'WINNER', 'LWINNER', 'COST', 'VALUEWHEN', 'TOPRANGE', 'LOWRANGE',
+    // Market data accessor functions (8)
+    'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOL', 'AMOUNT', 'ADVANCE', 'DECLINE',
+    // DateTime functions (8)
+    'DATE', 'TIME', 'YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', 'WEEKDAY',
+    // Period functions (4)
+    'PERIOD', 'BARSCOUNT', 'ISLASTBAR', 'BARSSINCE'
+  ];
 }

@@ -21,6 +21,8 @@ describe('Incremental Calculation Performance', () => {
   function generateMarketData(count: number, startPrice: number = 100): MarketData[] {
     const data: MarketData[] = [];
     let price = startPrice;
+    const baseTimestamp = new Date('2024-01-02T09:30:00.000Z').getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
 
     for (let i = 0; i < count; i++) {
       // Simulate random price movements
@@ -39,6 +41,7 @@ describe('Incremental Calculation Performance', () => {
         high,
         low,
         volume,
+        timestamp: baseTimestamp + i * dayMs,
       });
     }
 
