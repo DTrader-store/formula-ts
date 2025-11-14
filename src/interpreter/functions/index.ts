@@ -3,12 +3,14 @@ import { MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND } from './math';
 import { REF, HHV, LLV } from './reference';
 import { IF, CROSS, EVERY, EXIST, BARSLAST, COUNT } from './logical';
 import { STD, VAR, MEDIAN, AVEDEV } from './statistics';
+import { SMA, WMA, RSI } from './technical';
 
 // Export all functions
 export { MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND } from './math';
 export { REF, HHV, LLV } from './reference';
 export { IF, CROSS, EVERY, EXIST, BARSLAST, COUNT } from './logical';
 export { STD, VAR, MEDIAN, AVEDEV } from './statistics';
+export { SMA, WMA, BOLL, RSI, ATR } from './technical';
 
 /**
  * Helper function to create a FormulaFunction wrapper for array-based functions
@@ -75,4 +77,12 @@ export function registerBuiltinFunctions(registry: FunctionRegistry): void {
   registry.register(createArrayFunction('VAR', 2, 2, (data, period) => VAR(data, period[0])));
   registry.register(createArrayFunction('MEDIAN', 2, 2, (data, period) => MEDIAN(data, period[0])));
   registry.register(createArrayFunction('AVEDEV', 2, 2, (data, period) => AVEDEV(data, period[0])));
+
+  // Technical analysis functions
+  registry.register(createArrayFunction('SMA', 3, 3, (data, N, M) => SMA(data, N[0], M[0])));
+  registry.register(createArrayFunction('WMA', 2, 2, (data, period) => WMA(data, period[0])));
+  registry.register(createArrayFunction('RSI', 2, 2, (data, period) => RSI(data, period[0])));
+  // Note: BOLL and ATR require special handling in the interpreter
+  // BOLL returns 3 arrays [upper, middle, lower]
+  // ATR requires 3 input arrays (high, low, close)
 }
