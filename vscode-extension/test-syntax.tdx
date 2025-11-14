@@ -1,0 +1,112 @@
+// Test file to verify syntax highlighting in VSCode
+// This file contains examples of all supported syntax elements
+
+// Comments: Line comments start with //
+{ This is a block comment
+  It can span multiple lines
+  And is enclosed in curly braces }
+
+// Keywords and Logical Operators
+MA5 := MA(CLOSE, 5);
+IF(MA5 > MA10, 1, 0);
+IF(CLOSE > OPEN AND VOLUME > 1000000, 1, -1);
+
+// Operators
+RESULT1 := 10 + 5;
+RESULT2 := 20 - 3;
+RESULT3 := 4 * 5;
+RESULT4 := 100 / 4;
+COMPARISON1 := CLOSE > OPEN;
+COMPARISON2 := HIGH >= LOW;
+COMPARISON3 := VOLUME <> 0;
+COMPARISON4 := CLOSE <= PREV_CLOSE;
+COMPARISON5 := CLOSE = OPEN;
+
+// Numbers (different formats)
+NUM1 := 100;
+NUM2 := 3.14159;
+NUM3 := 0.5;
+NUM4 := 1000000;
+
+// Market Data Fields
+OPEN_PRICE := OPEN;
+CLOSE_PRICE := CLOSE;
+HIGH_PRICE := HIGH;
+LOW_PRICE := LOW;
+VOL := VOLUME;
+AMT := AMOUNT;
+
+// Math Functions
+MA10 := MA(CLOSE, 10);
+EMA12 := EMA(CLOSE, 12);
+SUM10 := SUM(VOLUME, 10);
+MAX_VAL := MAX(HIGH, 100);
+MIN_VAL := MIN(LOW, 50);
+ABS_VAL := ABS(-10);
+SQRT_VAL := SQRT(100);
+POW_VAL := POW(2, 8);
+MOD_VAL := MOD(10, 3);
+ROUND_VAL := ROUND(3.7);
+
+// Reference Functions
+PREV1 := REF(CLOSE, 1);
+HIGHEST_20 := HHV(HIGH, 20);
+LOWEST_20 := LLV(LOW, 20);
+
+// Logical Functions
+CROSS_RESULT := CROSS(MA5, MA10);
+EVERY_RESULT := EVERY(CLOSE > OPEN, 5);
+EXIST_RESULT := EXIST(VOLUME > 1000000, 10);
+LAST_UP_BAR := BARSLAST(CLOSE > OPEN);
+UP_COUNT := COUNT(CLOSE > OPEN, 20);
+
+// Statistical Functions
+STD_RESULT := STD(CLOSE, 20);
+VAR_RESULT := VAR(CLOSE, 20);
+MEDIAN_RESULT := MEDIAN(CLOSE, 20);
+AVEDEV_RESULT := AVEDEV(CLOSE, 20);
+
+// Technical Functions
+SMA_RESULT := SMA(CLOSE, 10, 3);
+WMA_RESULT := WMA(CLOSE, 10);
+RSI_RESULT := RSI(CLOSE, 14);
+
+// Chart Attributes - Colors
+RED_LINE := 1, COLORRED;
+GREEN_LINE := 1, COLORGREEN;
+BLUE_LINE := 1, COLORBLUE;
+YELLOW_LINE := 1, COLORYELLOW;
+WHITE_LINE := 1, COLORWHITE;
+BLACK_LINE := 1, COLORBLACK;
+CYAN_LINE := 1, COLORCYAN;
+MAGENTA_LINE := 1, COLORMAGENTA;
+
+// Chart Attributes - Line Thickness
+THIN := MA5, LINETHICK0;
+THICK1 := MA5, LINETHICK1;
+THICK2 := MA5, LINETHICK2;
+THICK3 := MA5, LINETHICK3;
+THICK4 := MA5, LINETHICK4;
+
+// Chart Attributes - Line Styles
+DOTTED := MA10, DOTLINE;
+STICK_STYLE := SIGNAL, STICK;
+
+// Complex Expression Examples
+MACD := EMA12 - EMA26;
+SIGNAL := EMA(MACD, 9);
+HISTOGRAM := MACD - SIGNAL;
+
+UPPER_BAND := MA(CLOSE, 20) + 2 * STD(CLOSE, 20);
+LOWER_BAND := MA(CLOSE, 20) - 2 * STD(CLOSE, 20);
+
+BUY_SIGNAL := CROSS(MA5, MA10) AND RSI14 < 70;
+SELL_SIGNAL := CROSS(MA10, MA5) AND RSI14 > 30;
+
+// Nested IF statements
+STATUS := IF(CLOSE > MA5, IF(CLOSE > MA10, 1, 0), -1);
+
+// Drawing commands
+DRAW_MA5 := MA5, COLORRED, LINETHICK2;
+DRAW_MA10 := MA10, COLORBLUE, LINETHICK1;
+DRAW_SIGNAL := IF(BUY_SIGNAL, 100, IF(SELL_SIGNAL, -100, 0)), COLORGREEN;
