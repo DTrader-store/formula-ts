@@ -1,4 +1,4 @@
-import { IF, CROSS } from '../../../src/interpreter/functions/logical';
+import { IF, CROSS, EVERY, EXIST, BARSLAST, COUNT } from '../../../src/interpreter/functions/logical';
 
 describe('Logical Functions', () => {
   describe('IF - Conditional Selection', () => {
@@ -114,6 +114,218 @@ describe('Logical Functions', () => {
       expect(result.length).toBe(2);
       expect(result[0]).toBe(0);
       expect(result[1]).toBe(1); // 1 < 2 and 3 >= 2
+    });
+  });
+
+  describe('EVERY - All non-zero in N periods', () => {
+    it('should return 1 when all values in N period are non-zero', () => {
+      const data = [1, 1, 1, 1];
+      const result = EVERY(data, 3);
+
+      // [NaN, NaN, 1, 1]
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(Number.isNaN(result[1])).toBe(true);
+      expect(result[2]).toBe(1);
+      expect(result[3]).toBe(1);
+    });
+
+    it('should return 0 when not all values in N period are non-zero', () => {
+      const data = [1, 1, 0, 1];
+      const result = EVERY(data, 3);
+
+      // [NaN, NaN, 0, 0]
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(Number.isNaN(result[1])).toBe(true);
+      expect(result[2]).toBe(0);
+      expect(result[3]).toBe(0);
+    });
+
+    it('should check N=2 period correctly', () => {
+      const data = [1, 0, 1, 1, 0];
+      const result = EVERY(data, 2);
+
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[1]).toBe(0); // [1, 0] has zero
+      expect(result[2]).toBe(0); // [0, 1] has zero
+      expect(result[3]).toBe(1); // [1, 1] all non-zero
+      expect(result[4]).toBe(0); // [1, 0] has zero
+    });
+
+    it('should handle all zeros', () => {
+      const data = [0, 0, 0, 0];
+      const result = EVERY(data, 2);
+
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[1]).toBe(0);
+      expect(result[2]).toBe(0);
+      expect(result[3]).toBe(0);
+    });
+
+    it('should handle mixed positive and negative values as non-zero', () => {
+      const data = [1, -1, 0.5, -0.5];
+      const result = EVERY(data, 2);
+
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[1]).toBe(1); // [1, -1] all non-zero
+      expect(result[2]).toBe(1); // [-1, 0.5] all non-zero
+      expect(result[3]).toBe(1); // [0.5, -0.5] all non-zero
+    });
+  });
+
+  describe('EXIST - Any non-zero in N periods', () => {
+    it('should return 1 when any value in N period is non-zero', () => {
+      const data = [0, 0, 1, 0];
+      const result = EXIST(data, 3);
+
+      // [NaN, NaN, 1, 1]
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(Number.isNaN(result[1])).toBe(true);
+      expect(result[2]).toBe(1);
+      expect(result[3]).toBe(1);
+    });
+
+    it('should return 0 when all values in N period are zero', () => {
+      const data = [0, 0, 0, 1];
+      const result = EXIST(data, 3);
+
+      // [NaN, NaN, 0, 1]
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(Number.isNaN(result[1])).toBe(true);
+      expect(result[2]).toBe(0);
+      expect(result[3]).toBe(1);
+    });
+
+    it('should check N=2 period correctly', () => {
+      const data = [1, 0, 0, 1, 0];
+      const result = EXIST(data, 2);
+
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[1]).toBe(1); // [1, 0] has non-zero
+      expect(result[2]).toBe(0); // [0, 0] all zeros
+      expect(result[3]).toBe(1); // [0, 1] has non-zero
+      expect(result[4]).toBe(1); // [1, 0] has non-zero
+    });
+
+    it('should handle all non-zero values', () => {
+      const data = [1, 2, 3, 4];
+      const result = EXIST(data, 2);
+
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[1]).toBe(1);
+      expect(result[2]).toBe(1);
+      expect(result[3]).toBe(1);
+    });
+  });
+
+  describe('BARSLAST - Bars since last non-zero', () => {
+    it('should return bars since last non-zero value', () => {
+      const data = [0, 1, 0, 0, 1];
+      const result = BARSLAST(data);
+
+      // [1, 0, 1, 2, 0]
+      expect(result[0]).toBe(1); // No previous non-zero, distance is 1
+      expect(result[1]).toBe(0); // Current is non-zero
+      expect(result[2]).toBe(1); // 1 bar since last non-zero
+      expect(result[3]).toBe(2); // 2 bars since last non-zero
+      expect(result[4]).toBe(0); // Current is non-zero
+    });
+
+    it('should handle all zeros', () => {
+      const data = [0, 0, 0];
+      const result = BARSLAST(data);
+
+      // [1, 2, 3]
+      expect(result[0]).toBe(1);
+      expect(result[1]).toBe(2);
+      expect(result[2]).toBe(3);
+    });
+
+    it('should reset to 0 when non-zero value appears', () => {
+      const data = [1, 0, 0, 1, 0];
+      const result = BARSLAST(data);
+
+      // [0, 1, 2, 0, 1]
+      expect(result[0]).toBe(0); // Current is non-zero
+      expect(result[1]).toBe(1); // 1 bar since last non-zero
+      expect(result[2]).toBe(2); // 2 bars since last non-zero
+      expect(result[3]).toBe(0); // Current is non-zero
+      expect(result[4]).toBe(1); // 1 bar since last non-zero
+    });
+
+    it('should handle all non-zero values', () => {
+      const data = [1, 2, 3, 4];
+      const result = BARSLAST(data);
+
+      // [0, 0, 0, 0]
+      expect(result).toEqual([0, 0, 0, 0]);
+    });
+
+    it('should handle negative values as non-zero', () => {
+      const data = [0, -1, 0, 0];
+      const result = BARSLAST(data);
+
+      // [1, 0, 1, 2]
+      expect(result[0]).toBe(1);
+      expect(result[1]).toBe(0);
+      expect(result[2]).toBe(1);
+      expect(result[3]).toBe(2);
+    });
+  });
+
+  describe('COUNT - Count non-zero in N periods', () => {
+    it('should count non-zero values in N period', () => {
+      const data = [1, 0, 1, 1, 0];
+      const result = COUNT(data, 3);
+
+      // [NaN, NaN, 2, 2, 2]
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(Number.isNaN(result[1])).toBe(true);
+      expect(result[2]).toBe(2); // [1, 0, 1] -> 2 non-zero
+      expect(result[3]).toBe(2); // [0, 1, 1] -> 2 non-zero
+      expect(result[4]).toBe(2); // [1, 1, 0] -> 2 non-zero
+    });
+
+    it('should count correctly with all non-zero', () => {
+      const data = [1, 1, 1, 1];
+      const result = COUNT(data, 3);
+
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(Number.isNaN(result[1])).toBe(true);
+      expect(result[2]).toBe(3);
+      expect(result[3]).toBe(3);
+    });
+
+    it('should count correctly with all zeros', () => {
+      const data = [0, 0, 0, 0];
+      const result = COUNT(data, 3);
+
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(Number.isNaN(result[1])).toBe(true);
+      expect(result[2]).toBe(0);
+      expect(result[3]).toBe(0);
+    });
+
+    it('should handle N=2 period', () => {
+      const data = [1, 0, 1, 0, 1];
+      const result = COUNT(data, 2);
+
+      // [NaN, 1, 1, 1, 1]
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[1]).toBe(1); // [1, 0] -> 1 non-zero
+      expect(result[2]).toBe(1); // [0, 1] -> 1 non-zero
+      expect(result[3]).toBe(1); // [1, 0] -> 1 non-zero
+      expect(result[4]).toBe(1); // [0, 1] -> 1 non-zero
+    });
+
+    it('should handle negative values as non-zero', () => {
+      const data = [1, -1, 0, -0.5];
+      const result = COUNT(data, 2);
+
+      // [NaN, 2, 1, 1]
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[1]).toBe(2); // [1, -1] -> 2 non-zero
+      expect(result[2]).toBe(1); // [-1, 0] -> 1 non-zero
+      expect(result[3]).toBe(1); // [0, -0.5] -> 1 non-zero
     });
   });
 });

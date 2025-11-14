@@ -1,4 +1,4 @@
-import { MA, EMA, SUM, MAX, MIN } from '../../../src/interpreter/functions/math';
+import { MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND } from '../../../src/interpreter/functions/math';
 
 describe('Math Functions', () => {
   describe('MA - Simple Moving Average', () => {
@@ -140,6 +140,177 @@ describe('Math Functions', () => {
       const result = MIN(a, b);
 
       expect(result).toEqual([1, 2]);
+    });
+  });
+
+  describe('ABS - Absolute Value', () => {
+    it('should calculate absolute values correctly', () => {
+      const data = [1, -2, 3, -4, -5];
+      const result = ABS(data);
+
+      expect(result).toEqual([1, 2, 3, 4, 5]);
+    });
+
+    it('should handle all positive values', () => {
+      const data = [1, 2, 3];
+      const result = ABS(data);
+
+      expect(result).toEqual([1, 2, 3]);
+    });
+
+    it('should handle all negative values', () => {
+      const data = [-1, -2, -3];
+      const result = ABS(data);
+
+      expect(result).toEqual([1, 2, 3]);
+    });
+
+    it('should handle zero', () => {
+      const data = [0, -0, 0];
+      const result = ABS(data);
+
+      expect(result).toEqual([0, 0, 0]);
+    });
+  });
+
+  describe('SQRT - Square Root', () => {
+    it('should calculate square roots correctly', () => {
+      const data = [4, 9, 16, 25];
+      const result = SQRT(data);
+
+      expect(result[0]).toBeCloseTo(2);
+      expect(result[1]).toBeCloseTo(3);
+      expect(result[2]).toBeCloseTo(4);
+      expect(result[3]).toBeCloseTo(5);
+    });
+
+    it('should handle decimal results', () => {
+      const data = [2, 3, 5];
+      const result = SQRT(data);
+
+      expect(result[0]).toBeCloseTo(Math.sqrt(2));
+      expect(result[1]).toBeCloseTo(Math.sqrt(3));
+      expect(result[2]).toBeCloseTo(Math.sqrt(5));
+    });
+
+    it('should handle zero', () => {
+      const data = [0];
+      const result = SQRT(data);
+
+      expect(result[0]).toBe(0);
+    });
+
+    it('should return NaN for negative values', () => {
+      const data = [-1, -4];
+      const result = SQRT(data);
+
+      expect(Number.isNaN(result[0])).toBe(true);
+      expect(Number.isNaN(result[1])).toBe(true);
+    });
+  });
+
+  describe('POW - Power', () => {
+    it('should calculate power correctly for element-wise arrays', () => {
+      const base = [2, 3, 4];
+      const exp = [2, 2, 2];
+      const result = POW(base, exp);
+
+      expect(result).toEqual([4, 9, 16]);
+    });
+
+    it('should handle zero exponent', () => {
+      const base = [2, 3, 4];
+      const exp = [0, 0, 0];
+      const result = POW(base, exp);
+
+      expect(result).toEqual([1, 1, 1]);
+    });
+
+    it('should handle negative exponents', () => {
+      const base = [2, 4];
+      const exp = [-1, -2];
+      const result = POW(base, exp);
+
+      expect(result[0]).toBeCloseTo(0.5);
+      expect(result[1]).toBeCloseTo(0.0625);
+    });
+
+    it('should handle arrays of different lengths by using shorter length', () => {
+      const base = [2, 3, 4];
+      const exp = [2, 3];
+      const result = POW(base, exp);
+
+      expect(result).toEqual([4, 27]);
+    });
+  });
+
+  describe('MOD - Modulo', () => {
+    it('should calculate modulo correctly', () => {
+      const dividend = [10, 11, 12];
+      const divisor = [3, 3, 3];
+      const result = MOD(dividend, divisor);
+
+      expect(result).toEqual([1, 2, 0]);
+    });
+
+    it('should handle negative dividends', () => {
+      const dividend = [-10, -11];
+      const divisor = [3, 3];
+      const result = MOD(dividend, divisor);
+
+      expect(result[0]).toBe(-10 % 3);
+      expect(result[1]).toBe(-11 % 3);
+    });
+
+    it('should return NaN for division by zero', () => {
+      const dividend = [10];
+      const divisor = [0];
+      const result = MOD(dividend, divisor);
+
+      expect(Number.isNaN(result[0])).toBe(true);
+    });
+
+    it('should handle arrays of different lengths by using shorter length', () => {
+      const dividend = [10, 11, 12];
+      const divisor = [3, 3];
+      const result = MOD(dividend, divisor);
+
+      expect(result).toEqual([1, 2]);
+    });
+  });
+
+  describe('ROUND - Rounding', () => {
+    it('should round to nearest integer (banker\'s rounding)', () => {
+      const data = [1.4, 1.5, 1.6];
+      const result = ROUND(data);
+
+      expect(result[0]).toBe(1);
+      expect(result[1]).toBe(2);
+      expect(result[2]).toBe(2);
+    });
+
+    it('should handle negative values', () => {
+      const data = [-1.4, -2.5, -1.6];
+      const result = ROUND(data);
+
+      expect(result[0]).toBe(-1);
+      expect(result[1]).toBe(-2);
+      expect(result[2]).toBe(-2);
+    });
+
+    it('should handle whole numbers', () => {
+      const data = [1, 2, 3];
+      const result = ROUND(data);
+
+      expect(result).toEqual([1, 2, 3]);
+    });
+
+    it('should handle zero', () => {
+      const data = [0, 0.1];
+      const result = ROUND(data);
+
+      expect(result[0]).toBe(0);
+      expect(result[1]).toBe(0);
     });
   });
 });

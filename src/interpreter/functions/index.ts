@@ -1,12 +1,14 @@
 import { FunctionRegistry, FormulaFunction } from '../FunctionRegistry';
-import { MA, EMA, SUM, MAX, MIN } from './math';
+import { MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND } from './math';
 import { REF, HHV, LLV } from './reference';
-import { IF, CROSS } from './logical';
+import { IF, CROSS, EVERY, EXIST, BARSLAST, COUNT } from './logical';
+import { STD, VAR, MEDIAN, AVEDEV } from './statistics';
 
 // Export all functions
-export { MA, EMA, SUM, MAX, MIN } from './math';
+export { MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND } from './math';
 export { REF, HHV, LLV } from './reference';
-export { IF, CROSS } from './logical';
+export { IF, CROSS, EVERY, EXIST, BARSLAST, COUNT } from './logical';
+export { STD, VAR, MEDIAN, AVEDEV } from './statistics';
 
 /**
  * Helper function to create a FormulaFunction wrapper for array-based functions
@@ -49,6 +51,11 @@ export function registerBuiltinFunctions(registry: FunctionRegistry): void {
   registry.register(createArrayFunction('SUM', 2, 2, (data, period) => SUM(data, period[0])));
   registry.register(createArrayFunction('MAX', 2, 2, (a, b) => MAX(a, b)));
   registry.register(createArrayFunction('MIN', 2, 2, (a, b) => MIN(a, b)));
+  registry.register(createArrayFunction('ABS', 1, 1, (data) => ABS(data)));
+  registry.register(createArrayFunction('SQRT', 1, 1, (data) => SQRT(data)));
+  registry.register(createArrayFunction('POW', 2, 2, (base, exp) => POW(base, exp)));
+  registry.register(createArrayFunction('MOD', 2, 2, (dividend, divisor) => MOD(dividend, divisor)));
+  registry.register(createArrayFunction('ROUND', 1, 1, (data) => ROUND(data)));
 
   // Reference functions
   registry.register(createArrayFunction('REF', 2, 2, (data, period) => REF(data, period[0])));
@@ -58,4 +65,14 @@ export function registerBuiltinFunctions(registry: FunctionRegistry): void {
   // Logical functions
   registry.register(createArrayFunction('IF', 3, 3, (cond, a, b) => IF(cond, a, b)));
   registry.register(createArrayFunction('CROSS', 2, 2, (a, b) => CROSS(a, b)));
+  registry.register(createArrayFunction('EVERY', 2, 2, (data, period) => EVERY(data, period[0])));
+  registry.register(createArrayFunction('EXIST', 2, 2, (data, period) => EXIST(data, period[0])));
+  registry.register(createArrayFunction('BARSLAST', 1, 1, (data) => BARSLAST(data)));
+  registry.register(createArrayFunction('COUNT', 2, 2, (data, period) => COUNT(data, period[0])));
+
+  // Statistical functions
+  registry.register(createArrayFunction('STD', 2, 2, (data, period) => STD(data, period[0])));
+  registry.register(createArrayFunction('VAR', 2, 2, (data, period) => VAR(data, period[0])));
+  registry.register(createArrayFunction('MEDIAN', 2, 2, (data, period) => MEDIAN(data, period[0])));
+  registry.register(createArrayFunction('AVEDEV', 2, 2, (data, period) => AVEDEV(data, period[0])));
 }
