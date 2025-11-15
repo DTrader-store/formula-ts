@@ -7,6 +7,29 @@ import { SMA, WMA, RSI } from './technical';
 import { UPNDAY, DOWNNDAY, NDAY, RANGE, BETWEEN } from './pattern';
 import { WINNER, LWINNER, COST, VALUEWHEN, TOPRANGE, LOWRANGE } from './chip';
 import { getAllMarketDataFunctions } from './marketData';
+import {
+  MACD_DIF,
+  MACD_DEA,
+  MACD_MACD,
+  KDJ_K,
+  KDJ_D,
+  KDJ_J,
+  SAR,
+  CCI,
+  DMI_PDI,
+  DMI_MDI,
+  DMI_ADX,
+  DMI_ADXR,
+  TRIX,
+  OBV,
+  BIAS,
+  ROC,
+  MTM,
+  WR,
+  PSY,
+  ADX,
+  ADXR,
+} from './indicators';
 
 // Export all functions
 export { MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND } from './math';
@@ -19,6 +42,29 @@ export { WINNER, LWINNER, COST, VALUEWHEN, TOPRANGE, LOWRANGE } from './chip';
 export { OPEN, HIGH, LOW, CLOSE, VOL, AMOUNT, ADVANCE, DECLINE, getAllMarketDataFunctions } from './marketData';
 export { DATE, TIME, YEAR, MONTH, DAY, HOUR, MINUTE, WEEKDAY } from './datetime';
 export { PERIOD, BARSCOUNT, ISLASTBAR, BARSSINCE } from './period';
+export {
+  MACD_DIF,
+  MACD_DEA,
+  MACD_MACD,
+  KDJ_K,
+  KDJ_D,
+  KDJ_J,
+  SAR,
+  CCI,
+  DMI_PDI,
+  DMI_MDI,
+  DMI_ADX,
+  DMI_ADXR,
+  TRIX,
+  OBV,
+  BIAS,
+  ROC,
+  MTM,
+  WR,
+  PSY,
+  ADX,
+  ADXR,
+} from './indicators';
 
 /**
  * Helper function to create a FormulaFunction wrapper for array-based functions
@@ -119,6 +165,71 @@ export function registerBuiltinFunctions(registry: FunctionRegistry): void {
     LOWRANGE(X, period ? period[0] : undefined)
   ));
 
+  // Advanced technical indicators
+  registry.register(createArrayFunction('MACD_DIF', 3, 3, (close, fast, slow) =>
+    MACD_DIF(close, fast[0], slow[0])
+  ));
+  registry.register(createArrayFunction('MACD_DEA', 4, 4, (close, fast, slow, signal) =>
+    MACD_DEA(close, fast[0], slow[0], signal[0])
+  ));
+  registry.register(createArrayFunction('MACD_MACD', 4, 4, (close, fast, slow, signal) =>
+    MACD_MACD(close, fast[0], slow[0], signal[0])
+  ));
+  registry.register(createArrayFunction('KDJ_K', 5, 5, (high, low, close, n, m1) =>
+    KDJ_K(high, low, close, n[0], m1[0])
+  ));
+  registry.register(createArrayFunction('KDJ_D', 6, 6, (high, low, close, n, m1, m2) =>
+    KDJ_D(high, low, close, n[0], m1[0], m2[0])
+  ));
+  registry.register(createArrayFunction('KDJ_J', 6, 6, (high, low, close, n, m1, m2) =>
+    KDJ_J(high, low, close, n[0], m1[0], m2[0])
+  ));
+  registry.register(createArrayFunction('SAR', 4, 4, (high, low, step, max) =>
+    SAR(high, low, step[0], max[0])
+  ));
+  registry.register(createArrayFunction('CCI', 4, 4, (high, low, close, period) =>
+    CCI(high, low, close, period[0])
+  ));
+  registry.register(createArrayFunction('DMI_PDI', 4, 4, (high, low, close, period) =>
+    DMI_PDI(high, low, close, period[0])
+  ));
+  registry.register(createArrayFunction('DMI_MDI', 4, 4, (high, low, close, period) =>
+    DMI_MDI(high, low, close, period[0])
+  ));
+  registry.register(createArrayFunction('DMI_ADX', 4, 4, (high, low, close, period) =>
+    DMI_ADX(high, low, close, period[0])
+  ));
+  registry.register(createArrayFunction('DMI_ADXR', 4, 4, (high, low, close, period) =>
+    DMI_ADXR(high, low, close, period[0])
+  ));
+  registry.register(createArrayFunction('ADX', 4, 4, (high, low, close, period) =>
+    ADX(high, low, close, period[0])
+  ));
+  registry.register(createArrayFunction('ADXR', 4, 4, (high, low, close, period) =>
+    ADXR(high, low, close, period[0])
+  ));
+  registry.register(createArrayFunction('TRIX', 2, 2, (close, period) =>
+    TRIX(close, period[0])
+  ));
+  registry.register(createArrayFunction('OBV', 2, 2, (close, volume) =>
+    OBV(close, volume)
+  ));
+  registry.register(createArrayFunction('BIAS', 2, 2, (close, period) =>
+    BIAS(close, period[0])
+  ));
+  registry.register(createArrayFunction('ROC', 2, 2, (close, period) =>
+    ROC(close, period[0])
+  ));
+  registry.register(createArrayFunction('MTM', 2, 2, (close, period) =>
+    MTM(close, period[0])
+  ));
+  registry.register(createArrayFunction('WR', 4, 4, (high, low, close, period) =>
+    WR(high, low, close, period[0])
+  ));
+  registry.register(createArrayFunction('PSY', 2, 2, (close, period) =>
+    PSY(close, period[0])
+  ));
+
   // Market data accessor functions (registered separately due to ExecutionContext requirement)
   const marketDataFunctions = getAllMarketDataFunctions();
   for (const func of marketDataFunctions) {
@@ -156,6 +267,13 @@ export function getAllFunctions(): string[] {
     // DateTime functions (8)
     'DATE', 'TIME', 'YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', 'WEEKDAY',
     // Period functions (4)
-    'PERIOD', 'BARSCOUNT', 'ISLASTBAR', 'BARSSINCE'
+    'PERIOD', 'BARSCOUNT', 'ISLASTBAR', 'BARSSINCE',
+    // Advanced technical indicators (21)
+    'MACD_DIF', 'MACD_DEA', 'MACD_MACD',
+    'KDJ_K', 'KDJ_D', 'KDJ_J',
+    'SAR', 'CCI',
+    'DMI_PDI', 'DMI_MDI', 'DMI_ADX', 'DMI_ADXR',
+    'ADX', 'ADXR',
+    'TRIX', 'OBV', 'BIAS', 'ROC', 'MTM', 'WR', 'PSY'
   ];
 }

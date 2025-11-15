@@ -3,13 +3,52 @@
  * Implements 15 commonly used technical indicators for trading analysis
  */
 
-import { EMA } from './math';
-
 /**
- * Helper function to calculate EMA (reuse from math.ts)
+ * Helper function to calculate EMA
+ * Filters out NaN values when calculating EMA
  */
 function calculateEMA(data: number[], period: number): number[] {
-  return EMA(data, period);
+  const result: number[] = new Array(data.length);
+  const multiplier = 2 / (period + 1);
+
+  // Find first valid index (skip NaN values)
+  let firstValidIndex = -1;
+  for (let i = 0; i < data.length; i++) {
+    if (!isNaN(data[i])) {
+      firstValidIndex = i;
+      break;
+    }
+  }
+
+  if (firstValidIndex === -1 || firstValidIndex + period > data.length) {
+    // All NaN or insufficient data
+    return result.fill(NaN);
+  }
+
+  for (let i = 0; i < data.length; i++) {
+    if (i < firstValidIndex + period - 1) {
+      result[i] = NaN;
+      continue;
+    }
+
+    if (i === firstValidIndex + period - 1) {
+      // First EMA value = SMA of first period valid values
+      let sum = 0;
+      for (let j = 0; j < period; j++) {
+        sum += data[i - j];
+      }
+      result[i] = sum / period;
+    } else {
+      // EMA = (Current - Previous EMA) * multiplier + Previous EMA
+      if (!isNaN(data[i]) && !isNaN(result[i - 1])) {
+        result[i] = (data[i] - result[i - 1]) * multiplier + result[i - 1];
+      } else {
+        result[i] = NaN;
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -266,6 +305,10 @@ export function KDJ_J(high: number[], low: number[], close: number[], n: number,
 export function SAR(high: number[], low: number[], step: number, max: number): number[] {
   const length = Math.min(high.length, low.length);
   const result: number[] = new Array(length);
+
+  if (length === 0) {
+    return [];
+  }
 
   if (length < 2) {
     result[0] = NaN;

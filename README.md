@@ -21,11 +21,12 @@ A TypeScript implementation of a formula parser and interpreter for technical an
   - Variable assignments
   - Nested expressions
 
-- **Powerful Interpreter**: Execute formulas with 55 built-in functions:
+- **Powerful Interpreter**: Execute formulas with 76 built-in functions:
   - **Math & Statistics** (14): MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND, STD, VAR, MEDIAN, AVEDEV
   - **Reference & Comparison** (3): REF, HHV, LLV
   - **Logical Operations** (6): IF, CROSS, EVERY, EXIST, BARSLAST, COUNT
-  - **Technical Analysis** (3): SMA, WMA, RSI
+  - **Basic Technical Analysis** (3): SMA, WMA, RSI
+  - **Advanced Technical Indicators** (21): MACD (DIF, DEA, MACD), KDJ (K, D, J), SAR, CCI, DMI (PDI, MDI, ADX, ADXR), TRIX, OBV, BIAS, ROC, MTM, WR, PSY
   - **Pattern Detection** (5): UPNDAY, DOWNNDAY, NDAY, RANGE, BETWEEN
   - **Chip Distribution** (6): WINNER, LWINNER, COST, VALUEWHEN, TOPRANGE, LOWRANGE
   - **Market Data Access** (8): OPEN, HIGH, LOW, CLOSE, VOL, AMOUNT, ADVANCE, DECLINE
@@ -625,6 +626,184 @@ Bars Since - counts bars since the first time condition was true.
 ```
 GOLDEN:=CROSS(MA5,MA10);
 HOLD:BARSSINCE(GOLDEN);
+```
+
+## Advanced Technical Indicators
+
+### MACD - Moving Average Convergence Divergence
+
+MACD is a trend-following momentum indicator that shows the relationship between two moving averages.
+
+**MACD_DIF(close, fast, slow)** - DIF Line (Fast EMA - Slow EMA)
+```
+DIF:MACD_DIF(CLOSE,12,26);
+```
+
+**MACD_DEA(close, fast, slow, signal)** - DEA/Signal Line (EMA of DIF)
+```
+DEA:MACD_DEA(CLOSE,12,26,9);
+```
+
+**MACD_MACD(close, fast, slow, signal)** - MACD Histogram ((DIF - DEA) * 2)
+```
+MACD:MACD_MACD(CLOSE,12,26,9);
+BUY:CROSS(DIF,DEA);
+```
+
+### KDJ - Stochastic Oscillator
+
+KDJ is a momentum indicator comparing the closing price to the price range over a period.
+
+**KDJ_K(high, low, close, n, m1)** - K Line (smoothed RSV)
+```
+K:KDJ_K(HIGH,LOW,CLOSE,9,3);
+```
+
+**KDJ_D(high, low, close, n, m1, m2)** - D Line (smoothed K)
+```
+D:KDJ_D(HIGH,LOW,CLOSE,9,3,3);
+```
+
+**KDJ_J(high, low, close, n, m1, m2)** - J Line (3*K - 2*D)
+```
+J:KDJ_J(HIGH,LOW,CLOSE,9,3,3);
+BUY:CROSS(K,D);
+```
+
+### SAR - Parabolic Stop and Reverse
+
+SAR is a trend-following indicator providing entry and exit points.
+
+**SAR(high, low, step, max)** - Parabolic SAR
+```
+SAR_LINE:SAR(HIGH,LOW,0.02,0.2);
+LONG:CLOSE>SAR_LINE;
+SHORT:CLOSE<SAR_LINE;
+```
+
+### CCI - Commodity Channel Index
+
+CCI measures the deviation of price from its statistical mean.
+
+**CCI(high, low, close, period)** - CCI values (typically -200 to +200)
+```
+CCI14:CCI(HIGH,LOW,CLOSE,14);
+OVERBOUGHT:CCI14>100;
+OVERSOLD:CCI14<-100;
+```
+
+### DMI - Directional Movement Index
+
+DMI measures the strength and direction of a trend.
+
+**DMI_PDI(high, low, close, period)** - Positive Directional Indicator (+DI)
+```
+PDI:DMI_PDI(HIGH,LOW,CLOSE,14);
+```
+
+**DMI_MDI(high, low, close, period)** - Negative Directional Indicator (-DI)
+```
+MDI:DMI_MDI(HIGH,LOW,CLOSE,14);
+```
+
+**DMI_ADX(high, low, close, period)** - Average Directional Index
+```
+ADX:DMI_ADX(HIGH,LOW,CLOSE,14);
+STRONG_TREND:ADX>25;
+```
+
+**DMI_ADXR(high, low, close, period)** - ADX Rating
+```
+ADXR:DMI_ADXR(HIGH,LOW,CLOSE,14);
+```
+
+**ADX(high, low, close, period)** - Standalone ADX (alias for DMI_ADX)
+```
+ADX14:ADX(HIGH,LOW,CLOSE,14);
+```
+
+**ADXR(high, low, close, period)** - Standalone ADXR (alias for DMI_ADXR)
+```
+ADXR14:ADXR(HIGH,LOW,CLOSE,14);
+```
+
+### TRIX - Triple Exponential Average
+
+TRIX is a momentum oscillator showing the rate of change of a triple-smoothed EMA.
+
+**TRIX(close, period)** - TRIX percentage
+```
+TRIX12:TRIX(CLOSE,12);
+SIGNAL:MA(TRIX12,9);
+BUY:CROSS(TRIX12,SIGNAL);
+```
+
+### OBV - On Balance Volume
+
+OBV is a cumulative volume indicator showing buying and selling pressure.
+
+**OBV(close, volume)** - Cumulative volume
+```
+OBV_LINE:OBV(CLOSE,VOL);
+OBV_MA:MA(OBV_LINE,20);
+DIVERGENCE:CLOSE>REF(CLOSE,5) AND OBV_LINE<REF(OBV_LINE,5);
+```
+
+### BIAS - Bias Ratio
+
+BIAS measures the percentage deviation of price from its moving average.
+
+**BIAS(close, period)** - Deviation percentage
+```
+BIAS6:BIAS(CLOSE,6);
+BIAS12:BIAS(CLOSE,12);
+BIAS24:BIAS(CLOSE,24);
+OVERSOLD:BIAS6<-5;
+OVERBOUGHT:BIAS6>5;
+```
+
+### ROC - Rate of Change
+
+ROC measures the percentage change in price over a specified period.
+
+**ROC(close, period)** - Percentage change
+```
+ROC12:ROC(CLOSE,12);
+MOMENTUM_UP:ROC12>0;
+MOMENTUM_DOWN:ROC12<0;
+```
+
+### MTM - Momentum
+
+MTM measures the absolute change in price over a specified period.
+
+**MTM(close, period)** - Absolute difference
+```
+MTM12:MTM(CLOSE,12);
+MTM_MA:MA(MTM12,6);
+BUY:CROSS(MTM12,MTM_MA);
+```
+
+### WR - Williams %R
+
+WR is a momentum indicator measuring overbought/oversold levels.
+
+**WR(high, low, close, period)** - Williams %R (-100 to 0)
+```
+WR14:WR(HIGH,LOW,CLOSE,14);
+OVERSOLD:WR14<-80;
+OVERBOUGHT:WR14>-20;
+```
+
+### PSY - Psychological Line
+
+PSY measures the percentage of up days over a period.
+
+**PSY(close, period)** - Percentage of up days (0-100)
+```
+PSY12:PSY(CLOSE,12);
+BULLISH:PSY12>75;
+BEARISH:PSY12<25;
 ```
 
 ## Examples
