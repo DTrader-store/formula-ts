@@ -18,6 +18,8 @@ import * as functions from './functions';
 import * as marketDataFunctions from './functions/marketData';
 import * as datetimeFunctions from './functions/datetime';
 import * as periodFunctions from './functions/period';
+import * as patternFunctions from './functions/pattern';
+import * as chipFunctions from './functions/chip';
 
 /**
  * Interpreter executes formulas by traversing the AST
@@ -408,6 +410,97 @@ export class Interpreter {
         }
         return periodFunctions.BARSSINCE(args[0]);
 
+      // Pattern functions
+      case 'UPNDAY':
+        if (args.length !== 2) {
+          throw new Error(`UPNDAY expects 2 arguments, got ${args.length}`);
+        }
+        const upndayN = this.getConstantValue(args[1]);
+        return patternFunctions.UPNDAY(args[0], upndayN);
+
+      case 'DOWNNDAY':
+        if (args.length !== 2) {
+          throw new Error(`DOWNNDAY expects 2 arguments, got ${args.length}`);
+        }
+        const downndayN = this.getConstantValue(args[1]);
+        return patternFunctions.DOWNNDAY(args[0], downndayN);
+
+      case 'NDAY':
+        if (args.length !== 2) {
+          throw new Error(`NDAY expects 2 arguments, got ${args.length}`);
+        }
+        const ndayN = this.getConstantValue(args[1]);
+        return patternFunctions.NDAY(args[0], ndayN);
+
+      case 'RANGE':
+        if (args.length !== 3) {
+          throw new Error(`RANGE expects 3 arguments, got ${args.length}`);
+        }
+        return patternFunctions.RANGE(args[0], args[1], args[2]);
+
+      case 'BETWEEN':
+        if (args.length !== 3) {
+          throw new Error(`BETWEEN expects 3 arguments, got ${args.length}`);
+        }
+        return patternFunctions.BETWEEN(args[0], args[1], args[2]);
+
+      // Chip distribution functions
+      case 'WINNER':
+        if (args.length < 3 || args.length > 4) {
+          throw new Error(`WINNER expects 3-4 arguments, got ${args.length}`);
+        }
+        if (args.length === 4) {
+          const winnerLookback = this.getConstantValue(args[3]);
+          return chipFunctions.WINNER(args[0], args[1], args[2], winnerLookback);
+        }
+        return chipFunctions.WINNER(args[0], args[1], args[2]);
+
+      case 'LWINNER':
+        if (args.length < 3 || args.length > 4) {
+          throw new Error(`LWINNER expects 3-4 arguments, got ${args.length}`);
+        }
+        if (args.length === 4) {
+          const lwinnerLookback = this.getConstantValue(args[3]);
+          return chipFunctions.LWINNER(args[0], args[1], args[2], lwinnerLookback);
+        }
+        return chipFunctions.LWINNER(args[0], args[1], args[2]);
+
+      case 'COST':
+        if (args.length < 3 || args.length > 4) {
+          throw new Error(`COST expects 3-4 arguments, got ${args.length}`);
+        }
+        if (args.length === 4) {
+          const costLookback = this.getConstantValue(args[3]);
+          return chipFunctions.COST(args[0], args[1], args[2], costLookback);
+        }
+        return chipFunctions.COST(args[0], args[1], args[2]);
+
+      case 'VALUEWHEN':
+        if (args.length !== 2) {
+          throw new Error(`VALUEWHEN expects 2 arguments, got ${args.length}`);
+        }
+        return chipFunctions.VALUEWHEN(args[0], args[1]);
+
+      case 'TOPRANGE':
+        if (args.length < 1 || args.length > 2) {
+          throw new Error(`TOPRANGE expects 1-2 arguments, got ${args.length}`);
+        }
+        if (args.length === 2) {
+          const toprangePeriod = this.getConstantValue(args[1]);
+          return chipFunctions.TOPRANGE(args[0], toprangePeriod);
+        }
+        return chipFunctions.TOPRANGE(args[0]);
+
+      case 'LOWRANGE':
+        if (args.length < 1 || args.length > 2) {
+          throw new Error(`LOWRANGE expects 1-2 arguments, got ${args.length}`);
+        }
+        if (args.length === 2) {
+          const lowrangePeriod = this.getConstantValue(args[1]);
+          return chipFunctions.LOWRANGE(args[0], lowrangePeriod);
+        }
+        return chipFunctions.LOWRANGE(args[0]);
+
       default:
         throw new Error(`Unknown function: ${node.name}`);
     }
@@ -434,6 +527,68 @@ export class Interpreter {
    */
   visitIdentifier(node: Identifier): number[] {
     const name = node.name;
+    const upperName = name.toUpperCase();
+
+    // Check if it's a market data function used as identifier (without parentheses)
+    // These functions can be used as identifiers: OPEN, HIGH, LOW, CLOSE, VOL, AMOUNT, ADVANCE, DECLINE
+    const marketDataFunctionNames = ['OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOL', 'AMOUNT', 'ADVANCE', 'DECLINE'];
+    if (marketDataFunctionNames.includes(upperName)) {
+      switch (upperName) {
+        case 'OPEN':
+          return marketDataFunctions.OPEN.execute([], this.context);
+        case 'HIGH':
+          return marketDataFunctions.HIGH.execute([], this.context);
+        case 'LOW':
+          return marketDataFunctions.LOW.execute([], this.context);
+        case 'CLOSE':
+          return marketDataFunctions.CLOSE.execute([], this.context);
+        case 'VOL':
+          return marketDataFunctions.VOL.execute([], this.context);
+        case 'AMOUNT':
+          return marketDataFunctions.AMOUNT.execute([], this.context);
+        case 'ADVANCE':
+          return marketDataFunctions.ADVANCE.execute([], this.context);
+        case 'DECLINE':
+          return marketDataFunctions.DECLINE.execute([], this.context);
+      }
+    }
+
+    // Check if it's a datetime function used as identifier (without parentheses)
+    const datetimeFunctionNames = ['DATE', 'TIME', 'YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', 'WEEKDAY'];
+    if (datetimeFunctionNames.includes(upperName)) {
+      const timestamps = this.context.getMarketDataField('TIMESTAMP');
+      switch (upperName) {
+        case 'DATE':
+          return datetimeFunctions.DATE(timestamps);
+        case 'TIME':
+          return datetimeFunctions.TIME(timestamps);
+        case 'YEAR':
+          return datetimeFunctions.YEAR(timestamps);
+        case 'MONTH':
+          return datetimeFunctions.MONTH(timestamps);
+        case 'DAY':
+          return datetimeFunctions.DAY(timestamps);
+        case 'HOUR':
+          return datetimeFunctions.HOUR(timestamps);
+        case 'MINUTE':
+          return datetimeFunctions.MINUTE(timestamps);
+        case 'WEEKDAY':
+          return datetimeFunctions.WEEKDAY(timestamps);
+      }
+    }
+
+    // Check if it's a period function used as identifier (without parentheses)
+    const periodFunctionNames = ['PERIOD', 'BARSCOUNT', 'ISLASTBAR'];
+    if (periodFunctionNames.includes(upperName)) {
+      switch (upperName) {
+        case 'PERIOD':
+          return periodFunctions.PERIOD(this.context.getMarketDataField('TIMESTAMP'));
+        case 'BARSCOUNT':
+          return periodFunctions.BARSCOUNT(this.context.getDataLength());
+        case 'ISLASTBAR':
+          return periodFunctions.ISLASTBAR(this.context.getDataLength());
+      }
+    }
 
     // Check if it's a market data field
     if (this.context.isMarketDataField(name)) {
