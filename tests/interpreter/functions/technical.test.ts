@@ -8,16 +8,12 @@ describe('Technical Analysis Functions', () => {
       const M = 1;
       const result = SMA(data, N, M);
 
-      // First two values should be NaN (not enough data)
-      expect(Number.isNaN(result[0])).toBe(true);
-      expect(Number.isNaN(result[1])).toBe(true);
-
-      // First SMA value = simple average: (1+2+3)/3 = 2
-      expect(result[2]).toBeCloseTo(2);
-      // Next: (1*4 + (3-1)*2) / 3 = (4 + 4) / 3 = 2.667
-      expect(result[3]).toBeCloseTo(2.667, 2);
-      // Continue with formula...
-      expect(result[4]).toBeGreaterThan(3);
+      // TDX SMA starts from the first data point and recursively smooths.
+      expect(result[0]).toBeCloseTo(1);
+      expect(result[1]).toBeCloseTo(1.3333, 4);
+      expect(result[2]).toBeCloseTo(1.8889, 4);
+      expect(result[3]).toBeCloseTo(2.5926, 4);
+      expect(result[4]).toBeCloseTo(3.3951, 4);
     });
 
     it('should calculate SMA with weight M (exponential smoothing)', () => {
@@ -26,19 +22,11 @@ describe('Technical Analysis Functions', () => {
       const M = 2; // Weight for smoothing
       const result = SMA(data, N, M);
 
-      // First two should be NaN
-      expect(Number.isNaN(result[0])).toBe(true);
-      expect(Number.isNaN(result[1])).toBe(true);
-
-      // First value is simple average: (10+20+30)/3 = 20
-      expect(result[2]).toBeCloseTo(20);
-
-      // Next value uses weighted formula: (M*40 + (N-M)*prev) / N
-      // = (2*40 + (3-2)*20) / 3 = (80 + 20) / 3 = 33.333
-      expect(result[3]).toBeCloseTo(33.333, 2);
-
-      // Next: (2*50 + 1*33.333) / 3 = (100 + 33.333) / 3 = 44.444
-      expect(result[4]).toBeCloseTo(44.444, 2);
+      expect(result[0]).toBeCloseTo(10);
+      expect(result[1]).toBeCloseTo(16.6667, 4);
+      expect(result[2]).toBeCloseTo(25.5556, 4);
+      expect(result[3]).toBeCloseTo(35.1852, 4);
+      expect(result[4]).toBeCloseTo(45.0617, 4);
     });
 
     it('should handle M = N (more weight on current value)', () => {
@@ -47,15 +35,7 @@ describe('Technical Analysis Functions', () => {
       const M = 3;
       const result = SMA(data, N, M);
 
-      expect(Number.isNaN(result[0])).toBe(true);
-      expect(Number.isNaN(result[1])).toBe(true);
-      // First value: (10+20+30)/3 = 20
-      expect(result[2]).toBeCloseTo(20);
-      // When M=N, formula becomes: (N*current + 0*prev) / N = current
-      // (3*40 + 0*20) / 3 = 40
-      expect(result[3]).toBeCloseTo(40);
-      // (3*50 + 0*40) / 3 = 50
-      expect(result[4]).toBeCloseTo(50);
+      expect(result).toEqual([10, 20, 30, 40, 50]);
     });
   });
 

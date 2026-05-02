@@ -18,7 +18,7 @@ export {
 
 // Export types
 export { MarketData, validateMarketData, getMarketDataLength } from './types/MarketData';
-export { FormulaResult, OutputLine, LineStyle } from './types/FormulaResult';
+export { FormulaResult, OutputLine, LineStyle, DrawingEvent } from './types/FormulaResult';
 
 // Export AST node types
 export {
@@ -36,6 +36,7 @@ export {
   FunctionCall,
   Identifier,
   NumberLiteral,
+  StringLiteral,
 } from './parser/ast/nodes';
 
 // Export core components (for advanced usage)
@@ -48,6 +49,4 @@ export { ExecutionContext } from './interpreter/Context';
 export { FunctionRegistry, FormulaFunction } from './interpreter/FunctionRegistry';
 
 // Export built-in functions
-export { MA, EMA, SUM, MAX, MIN } from './interpreter/functions/math';
-export { REF, HHV, LLV } from './interpreter/functions/reference';
-export { IF, CROSS } from './interpreter/functions/logical';
+export * from './interpreter/functions';

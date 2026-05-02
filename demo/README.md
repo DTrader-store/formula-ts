@@ -56,12 +56,11 @@ npm run demo:build
 
 ```
 // 计算 5 日和 10 日移动平均线
-MA5: MA(CLOSE, 5);
-MA10: MA(CLOSE, 10);
+MA5: MA(CLOSE, 5), COLORRED;
+MA10: MA(CLOSE, 10), COLORBLUE;
 
-// 绘制到图表上
-DRAW MA5, COLOR: RED;
-DRAW MA10, COLOR: BLUE;
+// 绘图函数会输出结构化事件，调用方可自行适配图表
+DRAWTEXT(CROSS(MA5, MA10), C, 'B');
 ```
 
 ### 4. 执行公式
@@ -96,6 +95,16 @@ DRAW MA10, COLOR: BLUE;
 ### 逻辑函数
 - `IF(condition, true_val, false_val)` - 条件判断
 - `CROSS(a, b)` - 交叉检测
+
+### 绘图事件函数
+- `DRAWTEXT(condition, price, text)` - 文字标注事件
+- `DRAWICON(condition, price, iconType)` - 图标标注事件
+- `DRAWNUMBER(condition, price, number)` - 数字标注事件
+- `STICKLINE(condition, price1, price2, width, empty)` - 柱线事件
+- `DRAWLINE(cond1, price1, cond2, price2, expand)` - 线段事件
+- `POLYLINE(condition, price)` - 折线点事件
+- `DRAWBAND(upper, upperColor, lower, lowerColor)` - 带状区域事件
+- `DRAWKLINE(high, open, low, close)` - 自定义 K 线事件
 
 ### 技术指标
 - `MACD()` - MACD 指标

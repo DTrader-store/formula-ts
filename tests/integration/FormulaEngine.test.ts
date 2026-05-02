@@ -322,6 +322,299 @@ describe('FormulaEngine - End-to-End Integration Tests', () => {
     });
   });
 
+  describe('TDX Compatibility Surface', () => {
+    it('should evaluate unicode identifiers and short market data aliases', () => {
+      const formula = `
+        阻力1: MA(REF(HHV(H, 3), 1), 2), COLORRED;
+        支撑1 := MA(REF(LLV(L, 3), 1), 2);
+        现价: C, COLORBLACK;
+        成交额: AMO;
+      `;
+      const result = engine.evaluate(formula, marketData);
+
+      expect(result.outputs).toHaveLength(3);
+      expect(result.outputs[0].name).toBe('阻力1');
+      expect(result.outputs[0].style?.color).toBe('COLORRED');
+      expect(result.outputs[1].name).toBe('现价');
+      expect(result.outputs[1].data).toEqual(marketData.map((item) => item.close));
+      expect(result.variables).toHaveProperty('支撑1');
+      expect(result.outputs[2].data.every((value) => Number.isNaN(value))).toBe(true);
+    });
+
+    it('should allow later statements to reference output names', () => {
+      const formula = `
+        FIRST: C;
+        SECOND: FIRST + 1;
+      `;
+      const result = engine.evaluate(formula, marketData);
+
+      expect(result.outputs).toHaveLength(2);
+      expect(result.variables).toHaveProperty('FIRST');
+      expect(result.outputs[1].data).toEqual(marketData.map((item) => item.close + 1));
+    });
+
+    it('should evaluate Go-aligned math trig and rounding helpers', () => {
+      const formula = `
+        MAX_VALUE: MAX(2, 3);
+        MIN_VALUE: MIN(2, 3);
+        ABS_VALUE: ABS(-5);
+        SQRT_VALUE: SQRT(9);
+        POW_VALUE: POW(2, 3);
+        EXP_VALUE: EXP(0);
+        LN_VALUE: LN(EXP(1));
+        LOG_VALUE: LOG(100);
+        MOD_VALUE: MOD(10, 3);
+        CEILING_VALUE: CEILING(1.2);
+        FLOOR_VALUE: FLOOR(1.8);
+        INTPART_VALUE: INTPART(-1.8);
+        FRACPART_VALUE: FRACPART(1.25);
+        ROUND_VALUE: ROUND(1.5);
+        ROUND2_VALUE: ROUND2(1.234, 2);
+        SIGN_VALUE: SIGN(-5);
+        SIN_VALUE: SIN(0);
+        COS_VALUE: COS(0);
+        TAN_VALUE: TAN(0);
+        ASIN_VALUE: ASIN(0);
+        ACOS_VALUE: ACOS(1);
+        ATAN_VALUE: ATAN(0);
+      `;
+      const result = engine.evaluate(formula, marketData);
+      const outputs = Object.fromEntries(result.outputs.map((output) => [output.name, output.data]));
+
+      expect(outputs.MAX_VALUE[0]).toBe(3);
+      expect(outputs.MIN_VALUE[0]).toBe(2);
+      expect(outputs.ABS_VALUE[0]).toBe(5);
+      expect(outputs.SQRT_VALUE[0]).toBe(3);
+      expect(outputs.POW_VALUE[0]).toBe(8);
+      expect(outputs.EXP_VALUE[0]).toBe(1);
+      expect(outputs.LN_VALUE[0]).toBeCloseTo(1);
+      expect(outputs.LOG_VALUE[0]).toBe(2);
+      expect(outputs.MOD_VALUE[0]).toBe(1);
+      expect(outputs.CEILING_VALUE[0]).toBe(2);
+      expect(outputs.FLOOR_VALUE[0]).toBe(1);
+      expect(outputs.INTPART_VALUE[0]).toBe(-1);
+      expect(outputs.FRACPART_VALUE[0]).toBe(0.25);
+      expect(outputs.ROUND_VALUE[0]).toBe(2);
+      expect(outputs.ROUND2_VALUE[0]).toBe(1.23);
+      expect(outputs.SIGN_VALUE[0]).toBe(-1);
+      expect(outputs.SIN_VALUE[0]).toBe(0);
+      expect(outputs.COS_VALUE[0]).toBe(1);
+      expect(outputs.TAN_VALUE[0]).toBe(0);
+      expect(outputs.ASIN_VALUE[0]).toBe(0);
+      expect(outputs.ACOS_VALUE[0]).toBe(0);
+      expect(outputs.ATAN_VALUE[0]).toBe(0);
+    });
+
+    it('should evaluate additional reference and period helpers', () => {
+      const formula = `
+        PAST: REFV(C, 1);
+        FUTURE: REFX(C, 1);
+        FUTURE_V: REFXV(C, 2);
+        HH: HHVBARS(H, 5);
+        LL: LLVBARS(L, 5);
+        COUNT_VALID: BARSCOUNT(C);
+        CURR: CURRBARSCOUNT();
+        TOTAL: TOTALBARSCOUNT();
+        STATUS: BARSTATUS();
+        SUM_BARS: SUMBARS(V, 2500);
+      `;
+      const result = engine.evaluate(formula, marketData);
+      const outputs = Object.fromEntries(result.outputs.map((output) => [output.name, output.data]));
+
+      expect(Number.isNaN(outputs.PAST[0])).toBe(true);
+      expect(outputs.PAST.slice(1)).toEqual(marketData.slice(0, -1).map((item) => item.close));
+      expect(outputs.FUTURE.slice(0, -1)).toEqual(marketData.slice(1).map((item) => item.close));
+      expect(Number.isNaN(outputs.FUTURE[9])).toBe(true);
+      expect(outputs.FUTURE_V.slice(0, 8)).toEqual(marketData.slice(2).map((item) => item.close));
+      expect(outputs.HH).toHaveLength(10);
+      expect(outputs.LL).toHaveLength(10);
+      expect(outputs.COUNT_VALID).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      expect(outputs.CURR).toEqual([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+      expect(outputs.TOTAL).toEqual(new Array(10).fill(10));
+      expect(outputs.STATUS).toEqual([1, 2, 2, 2, 2, 2, 2, 2, 2, 3]);
+      expect(outputs.SUM_BARS.slice(0, 3).map((value) => Number.isNaN(value))).toEqual([true, true, false]);
+    });
+
+    it('should evaluate Go-aligned logical and pattern helpers', () => {
+      const formula = `
+        UP := C > O;
+        IFN_VALUE: IFN(UP, H, L);
+        IFF_VALUE: IFF(UP, H, L);
+        NOT_VALUE: NOT(UP);
+        LONG: LONGCROSS(C, O, 1);
+        LAST_VALUE: LAST(UP, 2, 1);
+        EXISTR_VALUE: EXISTR(UP, 2, 1);
+        FILTER_VALUE: FILTER(UP, 3);
+        LAST_COUNT: BARSLASTCOUNT(UP);
+        NDAY_PAIR: NDAY(C, O, 2);
+      `;
+      const result = engine.evaluate(formula, marketData);
+      const outputs = Object.fromEntries(result.outputs.map((output) => [output.name, output.data]));
+
+      expect(outputs.IFN_VALUE[0]).toBe(99);
+      expect(outputs.IFN_VALUE[1]).toBe(103);
+      expect(outputs.IFF_VALUE[0]).toBe(105);
+      expect(outputs.NOT_VALUE.slice(0, 4)).toEqual([0, 1, 0, 0]);
+      expect(outputs.LONG).toHaveLength(10);
+      expect(outputs.LAST_VALUE).toHaveLength(10);
+      expect(outputs.EXISTR_VALUE).toHaveLength(10);
+      expect(outputs.FILTER_VALUE).toHaveLength(10);
+      expect(outputs.LAST_COUNT).toHaveLength(10);
+      expect(outputs.NDAY_PAIR).toHaveLength(10);
+    });
+
+    it('should evaluate additional statistical and smoothing helpers', () => {
+      const formula = `
+        DEV: DEVSQ(C, 3);
+        FORECAST_VALUE: FORCAST(C, 3);
+        SLOPE_VALUE: SLOPE(C, 3);
+        STDP_VALUE: STDP(C, 3);
+        STDDEV_VALUE: STDDEV(C, 3);
+        VARP_VALUE: VARP(C, 3);
+        COV_VALUE: COVAR(C, O, 3);
+        REL_VALUE: RELATE(C, O, 3);
+        BETA_VALUE: BETA(C, O, 3);
+        DMA_VALUE: DMA(C, 0.5);
+        CONST_VALUE: CONST(C);
+        NULL_LINE: IF(C > O, C, DRAWNULL());
+      `;
+      const result = engine.evaluate(formula, marketData);
+      const outputs = Object.fromEntries(result.outputs.map((output) => [output.name, output.data]));
+
+      expect(outputs.DEV[2]).toBeCloseTo(2);
+      expect(outputs.FORECAST_VALUE[2]).toBeCloseTo(102.5);
+      expect(outputs.SLOPE_VALUE[2]).toBeCloseTo(0.5);
+      expect(outputs.STDP_VALUE[2]).toBeCloseTo(outputs.STDDEV_VALUE[2] / Math.sqrt(3 / 2));
+      expect(outputs.STDDEV_VALUE[2]).toBeCloseTo(1);
+      expect(outputs.VARP_VALUE[2]).toBeCloseTo(outputs.STDP_VALUE[2] ** 2);
+      expect(outputs.COV_VALUE[2]).toBeCloseTo(-0.3333333333);
+      expect(outputs.REL_VALUE[2]).toBeCloseTo(-0.5);
+      expect(outputs.BETA_VALUE[2]).toBeCloseTo(-0.5);
+      expect(outputs.DMA_VALUE[0]).toBe(102);
+      expect(outputs.DMA_VALUE[1]).toBe(101.5);
+      expect(outputs.CONST_VALUE).toEqual(new Array(10).fill(110));
+      expect(outputs.NULL_LINE[0]).toBe(102);
+      expect(Number.isNaN(outputs.NULL_LINE[1])).toBe(true);
+    });
+
+    it('should preserve COLORSTICK VOLSTICK and NODRAW output styles', () => {
+      const formula = `
+        MACD: CLOSE - OPEN, COLORSTICK, NODRAW;
+        VOLBAR: VOL, VOLSTICK;
+      `;
+      const result = engine.evaluate(formula, marketData);
+
+      expect(result.outputs).toHaveLength(2);
+      expect(result.outputs[0].style).toMatchObject({
+        drawMethod: 'colorstick',
+        hidden: true,
+      });
+      expect(result.outputs[1].style).toMatchObject({
+        drawMethod: 'volstick',
+      });
+    });
+
+    it('should collect standalone drawing events', () => {
+      const formula = `
+        PRICE: C, COLORBLACK;
+        DRAWTEXT(C > O, C, 'B');
+        DRAWTEXT(O > C, C, "S");
+      `;
+      const result = engine.evaluate(formula, marketData);
+      const drawings = result.drawings ?? [];
+
+      expect(result.outputs).toHaveLength(1);
+      expect(result.drawings).toBeDefined();
+      expect(drawings).toHaveLength(10);
+      expect(drawings[0]).toMatchObject({
+        function: 'DRAWTEXT',
+        barIndex: 0,
+        text: 'B',
+        values: { price: 102 },
+      });
+      expect(drawings[7]).toMatchObject({
+        function: 'DRAWTEXT',
+        barIndex: 1,
+        text: 'S',
+        values: { price: 101 },
+      });
+    });
+
+    it('should collect drawing events from assigned drawing functions', () => {
+      const formula = `
+        UP := C > O;
+        TEXT_MARK := DRAWTEXT(UP, L, 'UP');
+        ICON_MARK := DRAWICON(UP, H, 1);
+        NUMBER_MARK := DRAWNUMBER(UP, C, C);
+        STICK_MARK := STICKLINE(UP, O, C, 2, 0);
+      `;
+      const result = engine.evaluate(formula, marketData);
+      const drawings = result.drawings ?? [];
+
+      expect(drawings).toHaveLength(28);
+      expect(drawings[0]).toMatchObject({
+        function: 'DRAWTEXT',
+        barIndex: 0,
+        text: 'UP',
+        values: { price: 99 },
+      });
+      expect(drawings[7]).toMatchObject({
+        function: 'DRAWICON',
+        barIndex: 0,
+        values: { price: 105, value: 1 },
+      });
+      expect(drawings[14]).toMatchObject({
+        function: 'DRAWNUMBER',
+        barIndex: 0,
+        values: { price: 102, value: 102 },
+      });
+      expect(drawings[21]).toMatchObject({
+        function: 'STICKLINE',
+        barIndex: 0,
+        values: { price1: 100, price2: 102, width: 2, empty: 0 },
+      });
+    });
+
+    it('should collect line band polyline and kline drawing payloads', () => {
+      const formula = `
+        LINE_MARK := DRAWLINE(BARSTATUS() = 1, L, ISLASTBAR(), H, 0);
+        POLY_MARK := POLYLINE(C > O, C);
+        BAND_MARK := DRAWBAND(H, 1, L, 2);
+        KLINE_MARK := DRAWKLINE(H, O, L, C);
+      `;
+      const result = engine.evaluate(formula, marketData);
+      const drawings = result.drawings ?? [];
+
+      expect(drawings).toHaveLength(28);
+      expect(drawings[0]).toMatchObject({
+        function: 'DRAWLINE',
+        barIndex: 0,
+        values: {
+          startBar: 0,
+          startPrice: 99,
+          endBar: 9,
+          endPrice: 112,
+          expand: 0,
+        },
+      });
+      expect(drawings[1]).toMatchObject({
+        function: 'POLYLINE',
+        barIndex: 0,
+        values: { price: 102 },
+      });
+      expect(drawings[8]).toMatchObject({
+        function: 'DRAWBAND',
+        barIndex: 0,
+        values: { upper: 105, upperColor: 1, lower: 99, lowerColor: 2 },
+      });
+      expect(drawings[18]).toMatchObject({
+        function: 'DRAWKLINE',
+        barIndex: 0,
+        values: { high: 105, open: 100, low: 99, close: 102 },
+      });
+    });
+  });
+
   describe('Real Market Data Scenarios', () => {
     it('should calculate Bollinger Bands', () => {
       const formula = `

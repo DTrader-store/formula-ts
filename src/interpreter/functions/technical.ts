@@ -22,23 +22,13 @@
 export function SMA(data: number[], N: number, M: number): number[] {
   const result: number[] = new Array(data.length);
 
-  for (let i = 0; i < data.length; i++) {
-    if (i < N - 1) {
-      result[i] = NaN;
-      continue;
-    }
+  if (data.length === 0) {
+    return result;
+  }
 
-    if (i === N - 1) {
-      // First SMA value = simple average of first N values
-      let sum = 0;
-      for (let j = 0; j < N; j++) {
-        sum += data[i - j];
-      }
-      result[i] = sum / N;
-    } else {
-      // Weighted formula: (M * Current + (N - M) * Previous) / N
-      result[i] = (M * data[i] + (N - M) * result[i - 1]) / N;
-    }
+  result[0] = data[0];
+  for (let i = 1; i < data.length; i++) {
+    result[i] = (M * data[i] + (N - M) * result[i - 1]) / N;
   }
 
   return result;
@@ -75,6 +65,35 @@ export function WMA(data: number[], N: number): number[] {
   }
 
   return result;
+}
+
+/**
+ * DMA - Dynamic moving average.
+ * Alpha can be a scalar series (same value on every bar) or a per-bar series.
+ */
+export function DMA(data: number[], alpha: number[]): number[] {
+  const result: number[] = new Array(data.length);
+  if (data.length === 0) {
+    return result;
+  }
+
+  result[0] = data[0];
+  for (let i = 1; i < data.length; i++) {
+    const currentAlpha = alpha[Math.min(i, alpha.length - 1)];
+    result[i] = currentAlpha * data[i] + (1 - currentAlpha) * result[i - 1];
+  }
+
+  return result;
+}
+
+/**
+ * CONST - Fill all bars with the final value of the input series.
+ */
+export function CONST(data: number[]): number[] {
+  if (data.length === 0) {
+    return [];
+  }
+  return new Array(data.length).fill(data[data.length - 1]);
 }
 
 /**

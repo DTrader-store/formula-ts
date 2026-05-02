@@ -1,4 +1,5 @@
 import { MarketData } from '../types/MarketData';
+import { DrawingEvent } from '../types/FormulaResult';
 import { FunctionRegistry } from './FunctionRegistry';
 
 /**
@@ -15,6 +16,9 @@ export class ExecutionContext {
   /** Output declarations */
   private outputs: Map<string, number[]>;
 
+  /** Rendering-agnostic drawing events */
+  private drawings: DrawingEvent[];
+
   /** Function registry for built-in functions */
   private functionRegistry: FunctionRegistry;
 
@@ -27,6 +31,7 @@ export class ExecutionContext {
     this.marketData = marketData;
     this.variables = new Map();
     this.outputs = new Map();
+    this.drawings = [];
     this.functionRegistry = functionRegistry;
   }
 
@@ -40,18 +45,25 @@ export class ExecutionContext {
 
     switch (upperField) {
       case 'OPEN':
+      case 'O':
         return this.marketData.map((d) => d.open);
       case 'CLOSE':
+      case 'C':
         return this.marketData.map((d) => d.close);
       case 'HIGH':
+      case 'H':
         return this.marketData.map((d) => d.high);
       case 'LOW':
+      case 'L':
         return this.marketData.map((d) => d.low);
       case 'VOLUME':
+      case 'VOL':
+      case 'V':
         return this.marketData.map((d) => d.volume);
       case 'TIMESTAMP':
         return this.marketData.map((d) => d.timestamp);
       case 'AMOUNT':
+      case 'AMO':
         return this.marketData.map((d) => d.amount ?? NaN);
       case 'TRADABLESHARES':
         return this.marketData.map((d) => d.tradableShares ?? NaN);
@@ -109,6 +121,14 @@ export class ExecutionContext {
   }
 
   /**
+   * Append drawing events emitted by a formula function
+   * @param drawings - Drawing events to append
+   */
+  addDrawings(drawings: DrawingEvent[]): void {
+    this.drawings.push(...drawings);
+  }
+
+  /**
    * Get an output value
    * @param name - Output name
    * @returns Output value (array) or undefined if not found
@@ -123,6 +143,14 @@ export class ExecutionContext {
    */
   getOutputs(): Map<string, number[]> {
     return this.outputs;
+  }
+
+  /**
+   * Get all drawing events
+   * @returns Rendering-agnostic drawing events
+   */
+  getDrawings(): DrawingEvent[] {
+    return this.drawings;
   }
 
   /**
@@ -149,7 +177,8 @@ export class ExecutionContext {
   isMarketDataField(name: string): boolean {
     const upperName = name.toUpperCase();
     return [
-      'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VOLUME',
+      'OPEN', 'CLOSE', 'HIGH', 'LOW', 'VOLUME', 'VOL', 'V',
+      'O', 'C', 'H', 'L', 'AMO',
       'TIMESTAMP', 'AMOUNT', 'TRADABLESHARES', 'ADVANCE', 'DECLINE'
     ].includes(upperName);
   }

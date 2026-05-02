@@ -4,9 +4,9 @@ import { Interpreter } from './interpreter/Interpreter';
 import { ExecutionContext } from './interpreter/Context';
 import { IncrementalContext } from './interpreter/IncrementalContext';
 import { FunctionRegistry } from './interpreter/FunctionRegistry';
-import { Program } from './parser/ast/nodes';
+import { Program, isOutputDeclaration } from './parser/ast/nodes';
 import { MarketData } from './types/MarketData';
-import { FormulaResult, OutputLine } from './types/FormulaResult';
+import { FormulaResult, OutputLine, LineStyle } from './types/FormulaResult';
 
 /**
  * FormulaEngine - Main entry point for formula compilation and execution
@@ -62,9 +62,13 @@ export class FormulaEngine {
     const outputsMap = context.getOutputs();
 
     for (const [name, data] of outputsMap) {
+      const statement = ast.body.find(
+        (item) => isOutputDeclaration(item) && item.name === name,
+      ) as { style?: LineStyle } | undefined;
       outputs.push({
         name,
         data,
+        style: statement?.style,
       });
     }
 
@@ -78,6 +82,7 @@ export class FormulaEngine {
     return {
       outputs,
       variables,
+      drawings: context.getDrawings(),
     };
   }
 
@@ -155,9 +160,13 @@ export class FormulaEngine {
     const outputsMap = context.getOutputs();
 
     for (const [name, data] of outputsMap) {
+      const statement = ast.body.find(
+        (item) => isOutputDeclaration(item) && item.name === name,
+      ) as { style?: LineStyle } | undefined;
       outputs.push({
         name,
         data,
+        style: statement?.style,
       });
     }
 
@@ -171,6 +180,7 @@ export class FormulaEngine {
     return {
       outputs,
       variables,
+      drawings: context.getDrawings(),
     };
   }
 

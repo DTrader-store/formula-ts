@@ -49,6 +49,16 @@ describe('Lexer', () => {
       expect(tokens[0].value).toBe('MA5');
     });
 
+    it('should tokenize unicode identifiers', () => {
+      const lexer = new Lexer('阻力1 支撑2');
+      const tokens = lexer.tokenize();
+      expect(tokens).toHaveLength(3);
+      expect(tokens[0].type).toBe(TokenType.IDENTIFIER);
+      expect(tokens[0].value).toBe('阻力1');
+      expect(tokens[1].type).toBe(TokenType.IDENTIFIER);
+      expect(tokens[1].value).toBe('支撑2');
+    });
+
     it('should tokenize market data identifiers', () => {
       const lexer = new Lexer('OPEN CLOSE HIGH LOW VOLUME AMOUNT');
       const tokens = lexer.tokenize();
@@ -112,6 +122,33 @@ describe('Lexer', () => {
       const lexer = new Lexer('STICK');
       const tokens = lexer.tokenize();
       expect(tokens[0].type).toBe(TokenType.STICK);
+    });
+
+    it('should recognize extended drawing style keywords', () => {
+      const lexer = new Lexer('COLORSTICK VOLSTICK NODRAW');
+      const tokens = lexer.tokenize();
+      expect(tokens[0].type).toBe(TokenType.COLORSTICK);
+      expect(tokens[1].type).toBe(TokenType.VOLSTICK);
+      expect(tokens[2].type).toBe(TokenType.NODRAW);
+    });
+  });
+
+  describe('String Literals', () => {
+    it('should tokenize quoted strings', () => {
+      const lexer = new Lexer("'BUY' \"SELL\"");
+      const tokens = lexer.tokenize();
+      expect(tokens).toHaveLength(3);
+      expect(tokens[0].type).toBe(TokenType.STRING);
+      expect(tokens[0].value).toBe('BUY');
+      expect(tokens[1].type).toBe(TokenType.STRING);
+      expect(tokens[1].value).toBe('SELL');
+    });
+
+    it('should decode escaped characters in strings', () => {
+      const lexer = new Lexer("'A\\nB\\'C'");
+      const tokens = lexer.tokenize();
+      expect(tokens[0].type).toBe(TokenType.STRING);
+      expect(tokens[0].value).toBe("A\nB'C");
     });
   });
 

@@ -12,6 +12,8 @@ import {
   FunctionCall,
   Identifier,
   NumberLiteral,
+  StringLiteral,
+  ExpressionStatement,
   NodeType,
   BinaryOperator,
   UnaryOperator,
@@ -78,7 +80,13 @@ export class Parser {
       return this.parseOutputDeclaration();
     }
 
-    throw this.error('Expected variable or output declaration');
+    const expression = this.parseExpression();
+    this.consume(TokenType.SEMICOLON, 'Expected ; after expression statement');
+    const statement: ExpressionStatement = {
+      type: NodeType.ExpressionStatement,
+      expression,
+    };
+    return statement;
   }
 
   /**
@@ -148,10 +156,21 @@ export class Parser {
         style.size = thickness;
       } else if (this.check(TokenType.DOTLINE)) {
         this.advance();
+        style.lineStyle = 'dotted';
         style.italic = true;
       } else if (this.check(TokenType.STICK)) {
         this.advance();
+        style.drawMethod = 'stick';
         style.bold = true;
+      } else if (this.check(TokenType.COLORSTICK)) {
+        this.advance();
+        style.drawMethod = 'colorstick';
+      } else if (this.check(TokenType.VOLSTICK)) {
+        this.advance();
+        style.drawMethod = 'volstick';
+      } else if (this.check(TokenType.NODRAW)) {
+        this.advance();
+        style.hidden = true;
       } else if (this.check(TokenType.SEMICOLON)) {
         // End of style attributes
         break;
@@ -325,6 +344,16 @@ export class Parser {
         value: parseFloat(token.value),
       };
       return numLiteral;
+    }
+
+    // String literal
+    if (this.check(TokenType.STRING)) {
+      const token = this.advance();
+      const stringLiteral: StringLiteral = {
+        type: NodeType.StringLiteral,
+        value: token.value,
+      };
+      return stringLiteral;
     }
 
     // Identifier or function call

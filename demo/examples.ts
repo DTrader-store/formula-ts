@@ -9,115 +9,97 @@ import { MarketData } from '../src/types/MarketData';
  */
 export const FORMULA_EXAMPLES: Record<string, string> = {
   ma: `// 移动平均线示例
-MA5: MA(CLOSE, 5);
-MA10: MA(CLOSE, 10);
-MA20: MA(CLOSE, 20);
-
-DRAW MA5, COLOR: RED;
-DRAW MA10, COLOR: BLUE;
-DRAW MA20, COLOR: GREEN;`,
+MA5: MA(CLOSE, 5), COLORRED;
+MA10: MA(CLOSE, 10), COLORBLUE;
+MA20: MA(CLOSE, 20), COLORGREEN;`,
 
   macd: `// MACD 指标
-DIF: EMA(CLOSE, 12) - EMA(CLOSE, 26);
-DEA: EMA(DIF, 9);
-MACD: (DIF - DEA) * 2;
-
-DRAW DIF, COLOR: YELLOW;
-DRAW DEA, COLOR: BLUE;
-DRAW MACD, COLOR: RED;`,
+DIF := EMA(CLOSE, 12) - EMA(CLOSE, 26);
+DEA := EMA(DIF, 9);
+DIF线: DIF, COLORYELLOW;
+DEA线: DEA, COLORBLUE;
+MACD: (DIF - DEA) * 2, COLORSTICK;`,
 
   kdj: `// KDJ 指标
 // 计算 RSV
-RSV: (CLOSE - LLV(LOW, 9)) / (HHV(HIGH, 9) - LLV(LOW, 9)) * 100;
+RSV := (CLOSE - LLV(LOW, 9)) / (HHV(HIGH, 9) - LLV(LOW, 9)) * 100;
 
 // K、D、J 值
-K: EMA(RSV, 3);
-D: EMA(K, 3);
-J: 3 * K - 2 * D;
-
-DRAW K, COLOR: YELLOW;
-DRAW D, COLOR: BLUE;
-DRAW J, COLOR: MAGENTA;`,
+K := EMA(RSV, 3);
+D := EMA(K, 3);
+J := 3 * K - 2 * D;
+K: K, COLORYELLOW;
+D: D, COLORBLUE;
+J: J, COLORMAGENTA;`,
 
   boll: `// 布林带
-MID: MA(CLOSE, 20);
-UPPER: MID + 2 * MA(CLOSE, 20);
-LOWER: MID - 2 * MA(CLOSE, 20);
-
-DRAW UPPER, COLOR: RED;
-DRAW MID, COLOR: YELLOW;
-DRAW LOWER, COLOR: GREEN;`,
+MID := MA(CLOSE, 20);
+UPPER := MID + 2 * MA(CLOSE, 20);
+LOWER := MID - 2 * MA(CLOSE, 20);
+UPPER: UPPER, COLORRED;
+MID: MID, COLORYELLOW;
+LOWER: LOWER, COLORGREEN;`,
 
   rsi: `// RSI 相对强弱指标
 // 涨跌幅
-CHANGE: CLOSE - REF(CLOSE, 1);
+CHANGE := CLOSE - REF(CLOSE, 1);
 
 // 上涨和下跌
-UP: IF(CHANGE > 0, CHANGE, 0);
-DOWN: IF(CHANGE < 0, -CHANGE, 0);
+UP := IF(CHANGE > 0, CHANGE, 0);
+DOWN := IF(CHANGE < 0, -CHANGE, 0);
 
 // RSI
-RSI6: MA(UP, 6) / (MA(UP, 6) + MA(DOWN, 6)) * 100;
-RSI12: MA(UP, 12) / (MA(UP, 12) + MA(DOWN, 12)) * 100;
-
-DRAW RSI6, COLOR: YELLOW;
-DRAW RSI12, COLOR: BLUE;`,
+RSI6: MA(UP, 6) / (MA(UP, 6) + MA(DOWN, 6)) * 100, COLORYELLOW;
+RSI12: MA(UP, 12) / (MA(UP, 12) + MA(DOWN, 12)) * 100, COLORBLUE;`,
 
   custom: `// 自定义策略示例 - 双均线交叉
-SHORT: MA(CLOSE, 5);
-LONG: MA(CLOSE, 20);
+SHORT := MA(CLOSE, 5);
+LONG := MA(CLOSE, 20);
 
 // 金叉信号
-GOLDEN: CROSS(SHORT, LONG);
-
-DRAW SHORT, COLOR: RED;
-DRAW LONG, COLOR: BLUE;
-DRAW GOLDEN, COLOR: YELLOW;`,
+GOLDEN := CROSS(SHORT, LONG);
+SHORT: SHORT, COLORRED;
+LONG: LONG, COLORBLUE;
+GOLDEN: GOLDEN, COLORYELLOW;`,
 
   uptrend: `// 连续上涨检测
 // 检测连续3天上涨的K线
-UP3: UPNDAY(CLOSE, 3);
+UP3 := UPNDAY(CLOSE, 3);
 
 // 同时成交量放大
-VOL_UP: VOLUME > MA(VOLUME, 5) * 1.2;
+VOL_UP := VOLUME > MA(VOLUME, 5) * 1.2;
 
 // 综合信号
-SIGNAL: UP3 AND VOL_UP;
-
-DRAW UP3, COLOR: GREEN;
-DRAW SIGNAL, COLOR: YELLOW;`,
+UP3: UP3, COLORGREEN;
+SIGNAL: UP3 AND VOL_UP, COLORYELLOW;`,
 
   timefilter: `// 时间过滤策略
 // 2024年的数据
-TIME_FILTER: YEAR = 2024;
+TIME_FILTER := YEAR = 2024;
 
 // MA金叉
-MA5: MA(CLOSE, 5);
-MA10: MA(CLOSE, 10);
-GOLDEN_CROSS: CROSS(MA5, MA10);
+MA5 := MA(CLOSE, 5);
+MA10 := MA(CLOSE, 10);
+GOLDEN_CROSS := CROSS(MA5, MA10);
 
 // 带时间过滤的信号
-SIGNAL: TIME_FILTER AND GOLDEN_CROSS;
-
-DRAW MA5, COLOR: RED;
-DRAW MA10, COLOR: BLUE;
-DRAW SIGNAL, COLOR: YELLOW;`,
+MA5: MA5, COLORRED;
+MA10: MA10, COLORBLUE;
+SIGNAL: TIME_FILTER AND GOLDEN_CROSS, COLORYELLOW;`,
 
   winner: `// 获利盘分析
 // 获利盘比例
-WINNER_RATIO: WINNER(CLOSE, VOLUME, CLOSE);
+WINNER_RATIO := WINNER(CLOSE, VOLUME, CLOSE);
 
 // 套牢盘较多（获利盘少于30%）
-LOW_WINNER: WINNER_RATIO < 0.3;
+LOW_WINNER := WINNER_RATIO < 0.3;
 
 // 创20天新高
-NEW_HIGH: TOPRANGE(HIGH, 20);
+NEW_HIGH := TOPRANGE(HIGH, 20);
 
 // 突破买入信号
-BUY: LOW_WINNER AND NEW_HIGH;
-
-DRAW WINNER_RATIO, COLOR: BLUE;
-DRAW BUY, COLOR: YELLOW;`,
+WINNER_RATIO: WINNER_RATIO, COLORBLUE;
+BUY: LOW_WINNER AND NEW_HIGH, COLORYELLOW;`,
 
   comprehensive: `// 综合交易策略
 // 均线系统
@@ -136,10 +118,8 @@ HOLD_DAYS := BARSSINCE(GOLDEN);
 
 // 卖出信号：盈利超过5%或持仓超过10天
 SELL: PROFIT > 5 OR HOLD_DAYS > 10;
-
-DRAW MA5, COLOR: RED;
-DRAW MA10, COLOR: BLUE;
-DRAW SELL, COLOR: YELLOW;`
+MA5: MA5, COLORRED;
+MA10: MA10, COLORBLUE;`
 };
 
 /**
@@ -149,6 +129,8 @@ DRAW SELL, COLOR: YELLOW;`
 export function generateSampleData(days: number = 100): MarketData[] {
   const data: MarketData[] = [];
   let basePrice = 100;
+  const startTimestamp = new Date('2024-01-02T09:30:00.000Z').getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
 
   for (let i = 0; i < days; i++) {
     // Add trend and noise
@@ -174,7 +156,8 @@ export function generateSampleData(days: number = 100): MarketData[] {
       high: Number(high.toFixed(2)),
       low: Number(low.toFixed(2)),
       volume,
-      amount
+      amount,
+      timestamp: startTimestamp + i * dayMs
     });
   }
 
@@ -184,7 +167,18 @@ export function generateSampleData(days: number = 100): MarketData[] {
 /**
  * Sample real-world-like market data
  */
-export const SAMPLE_MARKET_DATA: MarketData[] = [
+type DemoMarketDataInput = Omit<MarketData, 'timestamp'> & { timestamp?: number };
+
+const withTimestamps = (items: DemoMarketDataInput[]): MarketData[] => {
+  const startTimestamp = new Date('2024-01-02T09:30:00.000Z').getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  return items.map((item, index) => ({
+    ...item,
+    timestamp: item.timestamp ?? startTimestamp + index * dayMs,
+  }));
+};
+
+export const SAMPLE_MARKET_DATA: MarketData[] = withTimestamps([
   { open: 100.5, high: 102.3, low: 99.8, close: 101.2, volume: 1500000, amount: 151800000 },
   { open: 101.2, high: 103.5, low: 100.9, close: 102.8, volume: 1800000, amount: 184320000 },
   { open: 102.8, high: 104.2, low: 102.1, close: 103.5, volume: 2100000, amount: 217350000 },
@@ -210,7 +204,7 @@ export const SAMPLE_MARKET_DATA: MarketData[] = [
   { open: 121.5, high: 123.0, low: 121.1, close: 122.3, volume: 2700000, amount: 330210000 },
   { open: 122.3, high: 124.5, low: 121.8, close: 123.9, volume: 3300000, amount: 408870000 },
   { open: 123.9, high: 125.2, low: 123.5, close: 124.5, volume: 3000000, amount: 373500000 },
-];
+]);
 
 /**
  * Get description for a formula example

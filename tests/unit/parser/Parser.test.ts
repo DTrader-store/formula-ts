@@ -10,6 +10,8 @@ import {
   FunctionCall,
   Identifier,
   NumberLiteral,
+  StringLiteral,
+  ExpressionStatement,
   BinaryOperator,
   UnaryOperator,
 } from '../../../src/parser/ast/nodes';
@@ -82,6 +84,26 @@ describe('Parser', () => {
       expect(value.type).toBe(NodeType.Identifier);
       expect(value.name).toBe('VAR1');
     });
+
+    test('should parse unicode identifiers', () => {
+      const program = parse('阻力1: CLOSE; 支撑2 := LOW;');
+      expect((program.body[0] as OutputDeclaration).name).toBe('阻力1');
+      expect((program.body[1] as VariableDeclaration).name).toBe('支撑2');
+    });
+  });
+
+  describe('String Literals', () => {
+    test('should parse string literal function arguments', () => {
+      const program = parse("DRAWTEXT(CLOSE > OPEN, CLOSE, 'B');");
+      const statement = program.body[0] as ExpressionStatement;
+      expect(statement.type).toBe(NodeType.ExpressionStatement);
+
+      const call = statement.expression as FunctionCall;
+      expect(call.type).toBe(NodeType.FunctionCall);
+      const text = call.arguments[2] as StringLiteral;
+      expect(text.type).toBe(NodeType.StringLiteral);
+      expect(text.value).toBe('B');
+    });
   });
 
   describe('Variable Declaration', () => {
@@ -115,7 +137,9 @@ describe('Parser', () => {
     });
 
     test('should throw error on missing := in variable declaration', () => {
-      expect(() => parse('VAR1 = 10;')).toThrow(ParserError);
+      const program = parse('VAR1 = 10;');
+      const statement = program.body[0] as ExpressionStatement;
+      expect(statement.type).toBe(NodeType.ExpressionStatement);
     });
 
     test('should throw error on missing semicolon in variable declaration', () => {
@@ -167,8 +191,19 @@ describe('Parser', () => {
       expect(output.style?.bold).toBe(true);
     });
 
+    test('should parse extended output style suffixes', () => {
+      const program = parse('MACD: CLOSE - OPEN, COLORSTICK, NODRAW; VOL: VOLUME, VOLSTICK;');
+      const macd = program.body[0] as OutputDeclaration;
+      const vol = program.body[1] as OutputDeclaration;
+      expect(macd.style?.drawMethod).toBe('colorstick');
+      expect(macd.style?.hidden).toBe(true);
+      expect(vol.style?.drawMethod).toBe('volstick');
+    });
+
     test('should throw error on missing colon in output declaration', () => {
-      expect(() => parse('MA5 = 10;')).toThrow(ParserError);
+      const program = parse('MA5 = 10;');
+      const statement = program.body[0] as ExpressionStatement;
+      expect(statement.type).toBe(NodeType.ExpressionStatement);
     });
 
     test('should throw error on missing semicolon in output declaration', () => {

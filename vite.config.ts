@@ -6,6 +6,9 @@ export default defineConfig({
   build: {
     outDir: 'dist-demo',
     emptyOutDir: true,
+    rollupOptions: {
+      input: path.resolve(__dirname, 'demo/index.html'),
+    },
   },
   resolve: {
     alias: {

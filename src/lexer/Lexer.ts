@@ -20,6 +20,9 @@ export class Lexer {
     ['OR', TokenType.OR],
     ['DOTLINE', TokenType.DOTLINE],
     ['STICK', TokenType.STICK],
+    ['COLORSTICK', TokenType.COLORSTICK],
+    ['VOLSTICK', TokenType.VOLSTICK],
+    ['NODRAW', TokenType.NODRAW],
   ]);
 
   /**
@@ -77,8 +80,14 @@ export class Lexer {
       }
 
       // Identifiers and keywords
-      if (this.isAlpha(this.currentChar)) {
+      if (this.isIdentifierStart(this.currentChar)) {
         tokens.push(this.readIdentifierOrKeyword());
+        continue;
+      }
+
+      // String literals
+      if (this.currentChar === '\'' || this.currentChar === '"') {
+        tokens.push(this.readString());
         continue;
       }
 
@@ -153,14 +162,21 @@ export class Lexer {
    * Checks if character is alphabetic
    */
   private isAlpha(char: string): boolean {
-    return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z');
+    return /\p{L}/u.test(char);
   }
 
   /**
-   * Checks if character is alphanumeric or underscore
+   * Checks if character can start an identifier
    */
-  private isAlphaNumeric(char: string): boolean {
-    return this.isAlpha(char) || this.isDigit(char) || char === '_';
+  private isIdentifierStart(char: string): boolean {
+    return this.isAlpha(char) || char === '_';
+  }
+
+  /**
+   * Checks if character can continue an identifier
+   */
+  private isIdentifierPart(char: string): boolean {
+    return this.isIdentifierStart(char) || this.isDigit(char);
   }
 
   /**
@@ -286,14 +302,20 @@ export class Lexer {
     const startColumn = this.column;
     let value = '';
 
-    // Read alphanumeric characters
-    while (this.currentChar !== null && this.isAlphaNumeric(this.currentChar)) {
+    // Read identifier characters
+    while (this.currentChar !== null && this.isIdentifierPart(this.currentChar)) {
       value += this.currentChar;
       this.advance();
     }
 
     // Check if it's a keyword
     const upperValue = value.toUpperCase();
+
+    // Check standard keywords before COLOR* so COLORSTICK keeps its own token.
+    const keywordType = this.keywords.get(upperValue);
+    if (keywordType !== undefined) {
+      return new Token(keywordType, upperValue, this.line, startColumn);
+    }
 
     // Check for COLOR* keywords
     if (upperValue.startsWith('COLOR') && upperValue.length > 5) {
@@ -308,14 +330,68 @@ export class Lexer {
       }
     }
 
-    // Check standard keywords
-    const keywordType = this.keywords.get(upperValue);
-    if (keywordType !== undefined) {
-      return new Token(keywordType, upperValue, this.line, startColumn);
-    }
-
     // It's an identifier
     return new Token(TokenType.IDENTIFIER, value, this.line, startColumn);
+  }
+
+  /**
+   * Reads a single-quoted or double-quoted string literal
+   */
+  private readString(): Token {
+    const startColumn = this.column;
+    const quote = this.currentChar;
+    let value = '';
+
+    this.advance(); // consume opening quote
+
+    while (this.currentChar !== null && this.currentChar !== quote) {
+      if (this.currentChar === '\\') {
+        this.advance();
+        if (this.currentChar === null) {
+          break;
+        }
+        const escapedChar: string = this.currentChar;
+        switch (escapedChar) {
+          case 'n':
+            value += '\n';
+            break;
+          case 'r':
+            value += '\r';
+            break;
+          case 't':
+            value += '\t';
+            break;
+          case '\\':
+            value += '\\';
+            break;
+          case '\'':
+            value += '\'';
+            break;
+          case '"':
+            value += '"';
+            break;
+          default:
+            value += escapedChar;
+            break;
+        }
+        this.advance();
+        continue;
+      }
+
+      if (this.isNewline(this.currentChar)) {
+        throw new LexerError('Unterminated string literal', this.line, startColumn, quote ?? '');
+      }
+
+      value += this.currentChar;
+      this.advance();
+    }
+
+    if (this.currentChar !== quote) {
+      throw new LexerError('Unterminated string literal', this.line, startColumn, quote ?? '');
+    }
+
+    this.advance(); // consume closing quote
+    return new Token(TokenType.STRING, value, this.line, startColumn);
   }
 
   /**
@@ -323,7 +399,10 @@ export class Lexer {
    */
   private readOperatorOrDelimiter(): Token | null {
     const startColumn = this.column;
-    const char = this.currentChar!;
+    const char = this.currentChar;
+    if (char === null) {
+      return null;
+    }
 
     switch (char) {
       case '+':

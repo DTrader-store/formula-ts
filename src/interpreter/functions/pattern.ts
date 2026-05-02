@@ -86,6 +86,70 @@ export function NDAY(cond: number[], n: number): number[] {
 }
 
 /**
+ * NDAY_AB - Returns 1 when A has been greater than B for N bars.
+ */
+export function NDAY_AB(a: number[], b: number[], n: number): number[] {
+  const period = Math.floor(n);
+  const length = Math.min(a.length, b.length);
+  const result: number[] = new Array(length).fill(0);
+
+  for (let i = period - 1; i < length; i++) {
+    let allGreater = true;
+    for (let j = 0; j < period; j++) {
+      if (!(a[i - j] > b[i - j])) {
+        allGreater = false;
+        break;
+      }
+    }
+    result[i] = allGreater ? 1 : 0;
+  }
+
+  return result;
+}
+
+/**
+ * LAST - Whether condition stayed true from from bars ago through to bars ago.
+ */
+export function LAST(condition: number[], from: number, to: number): number[] {
+  const fromN = Math.floor(from);
+  const toN = Math.floor(to);
+  const result: number[] = new Array(condition.length).fill(0);
+
+  for (let i = fromN; i < condition.length; i++) {
+    let allTrue = true;
+    for (let j = toN; j <= fromN; j++) {
+      if (condition[i - j] === 0 || Number.isNaN(condition[i - j])) {
+        allTrue = false;
+        break;
+      }
+    }
+    result[i] = allTrue ? 1 : 0;
+  }
+
+  return result;
+}
+
+/**
+ * EXISTR - Whether condition was true at least once from from bars ago through to bars ago.
+ */
+export function EXISTR(condition: number[], from: number, to: number): number[] {
+  const fromN = Math.floor(from);
+  const toN = Math.floor(to);
+  const result: number[] = new Array(condition.length).fill(0);
+
+  for (let i = fromN; i < condition.length; i++) {
+    for (let j = toN; j <= fromN; j++) {
+      if (condition[i - j] !== 0 && !Number.isNaN(condition[i - j])) {
+        result[i] = 1;
+        break;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
  * RANGE - Check if A is Between B and C
  * Returns 1 when A is between B and C (inclusive), 0 otherwise
  * B and C can be in any order (min and max are determined automatically)

@@ -218,3 +218,114 @@ export function ROUND(data: number[]): number[] {
 
   return result;
 }
+
+/**
+ * EXP - Exponential
+ * Returns e raised to each input value.
+ */
+export function EXP(data: number[]): number[] {
+  return data.map((value) => Math.exp(value));
+}
+
+/**
+ * LN - Natural Logarithm
+ */
+export function LN(data: number[]): number[] {
+  return data.map((value) => Math.log(value));
+}
+
+/**
+ * LOG - Base-10 Logarithm
+ */
+export function LOG(data: number[]): number[] {
+  return data.map((value) => Math.log10(value));
+}
+
+/**
+ * CEILING - Round toward positive infinity
+ */
+export function CEILING(data: number[]): number[] {
+  return data.map((value) => Math.ceil(value));
+}
+
+/**
+ * FLOOR - Round toward negative infinity
+ */
+export function FLOOR(data: number[]): number[] {
+  return data.map((value) => Math.floor(value));
+}
+
+/**
+ * INTPART - Integer part truncated toward zero
+ */
+export function INTPART(data: number[]): number[] {
+  return data.map((value) => Math.trunc(value));
+}
+
+/**
+ * FRACPART - Fractional part after truncating toward zero
+ */
+export function FRACPART(data: number[]): number[] {
+  return data.map((value) => value - Math.trunc(value));
+}
+
+/**
+ * ROUND2 - Round to a fixed number of digits
+ */
+export function ROUND2(data: number[], digits: number): number[] {
+  const scale = Math.pow(10, digits);
+  return data.map((value) => Math.round(value * scale) / scale);
+}
+
+/**
+ * SIGN - Sign of each value
+ */
+export function SIGN(data: number[]): number[] {
+  return data.map((value) => {
+    if (value > 0) return 1;
+    if (value < 0) return -1;
+    return 0;
+  });
+}
+
+/**
+ * SIN - Sine
+ */
+export function SIN(data: number[]): number[] {
+  return data.map((value) => Math.sin(value));
+}
+
+/**
+ * COS - Cosine
+ */
+export function COS(data: number[]): number[] {
+  return data.map((value) => Math.cos(value));
+}
+
+/**
+ * TAN - Tangent
+ */
+export function TAN(data: number[]): number[] {
+  return data.map((value) => Math.tan(value));
+}
+
+/**
+ * ASIN - Arcsine
+ */
+export function ASIN(data: number[]): number[] {
+  return data.map((value) => Math.asin(value));
+}
+
+/**
+ * ACOS - Arccosine
+ */
+export function ACOS(data: number[]): number[] {
+  return data.map((value) => Math.acos(value));
+}
+
+/**
+ * ATAN - Arctangent
+ */
+export function ATAN(data: number[]): number[] {
+  return data.map((value) => Math.atan(value));
+}

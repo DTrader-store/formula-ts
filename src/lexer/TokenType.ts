@@ -4,6 +4,7 @@
 export enum TokenType {
   // Literals
   NUMBER = 'NUMBER',
+  STRING = 'STRING',
   IDENTIFIER = 'IDENTIFIER',
 
   // Operators
@@ -42,6 +43,9 @@ export enum TokenType {
   LINETHICK = 'LINETHICK',
   DOTLINE = 'DOTLINE',
   STICK = 'STICK',
+  COLORSTICK = 'COLORSTICK',
+  VOLSTICK = 'VOLSTICK',
+  NODRAW = 'NODRAW',
 
   // Special
   NEWLINE = 'NEWLINE',

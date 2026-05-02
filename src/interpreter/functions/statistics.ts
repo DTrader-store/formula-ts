@@ -78,6 +78,123 @@ export function VAR(data: number[], period: number): number[] {
 }
 
 /**
+ * VARP - Population variance alias for VAR
+ */
+export function VARP(data: number[], period: number): number[] {
+  return VAR(data, period);
+}
+
+/**
+ * STDP - Population standard deviation alias for STD
+ */
+export function STDP(data: number[], period: number): number[] {
+  return STD(data, period);
+}
+
+/**
+ * STDDEV - Sample standard deviation
+ */
+export function STDDEV(data: number[], period: number): number[] {
+  const result: number[] = new Array(data.length);
+
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result[i] = NaN;
+      continue;
+    }
+
+    let sum = 0;
+    for (let j = 0; j < period; j++) {
+      sum += data[i - j];
+    }
+    const mean = sum / period;
+
+    let variance = 0;
+    for (let j = 0; j < period; j++) {
+      const diff = data[i - j] - mean;
+      variance += diff * diff;
+    }
+
+    result[i] = period < 2 ? 0 : Math.sqrt(variance / (period - 1));
+  }
+
+  return result;
+}
+
+/**
+ * DEVSQ - Sum of squared deviations from the rolling mean
+ */
+export function DEVSQ(data: number[], period: number): number[] {
+  const result: number[] = new Array(data.length);
+
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result[i] = NaN;
+      continue;
+    }
+
+    let sum = 0;
+    for (let j = 0; j < period; j++) {
+      sum += data[i - j];
+    }
+    const mean = sum / period;
+
+    let devsq = 0;
+    for (let j = 0; j < period; j++) {
+      const diff = data[i - j] - mean;
+      devsq += diff * diff;
+    }
+
+    result[i] = devsq;
+  }
+
+  return result;
+}
+
+/**
+ * FORCAST - Rolling linear regression projection at the current bar.
+ */
+export function FORCAST(data: number[], period: number): number[] {
+  return rollingRegression(data, period, (slope, intercept, n) => intercept + slope * (n - 1));
+}
+
+/**
+ * SLOPE - Rolling linear regression slope.
+ */
+export function SLOPE(data: number[], period: number): number[] {
+  return rollingRegression(data, period, (slope) => slope);
+}
+
+/**
+ * COVAR - Rolling population covariance.
+ */
+export function COVAR(a: number[], b: number[], period: number): number[] {
+  return rollingPairStats(a, b, period, covariance);
+}
+
+/**
+ * RELATE - Rolling correlation coefficient.
+ */
+export function RELATE(a: number[], b: number[], period: number): number[] {
+  return rollingPairStats(a, b, period, (windowA, windowB) => {
+    const cov = covariance(windowA, windowB);
+    const varA = variance(windowA);
+    const varB = variance(windowB);
+    return varA === 0 || varB === 0 ? NaN : cov / Math.sqrt(varA * varB);
+  });
+}
+
+/**
+ * BETA - Rolling beta = covariance(a,b) / variance(b).
+ */
+export function BETA(a: number[], b: number[], period: number): number[] {
+  return rollingPairStats(a, b, period, (windowA, windowB) => {
+    const varB = variance(windowB);
+    return varB === 0 ? NaN : covariance(windowA, windowB) / varB;
+  });
+}
+
+/**
  * MEDIAN - Median
  * Calculates the median over N periods
  *
@@ -152,4 +269,96 @@ export function AVEDEV(data: number[], period: number): number[] {
   }
 
   return result;
+}
+
+function rollingRegression(
+  data: number[],
+  period: number,
+  fn: (slope: number, intercept: number, n: number) => number,
+): number[] {
+  const result: number[] = new Array(data.length);
+
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result[i] = NaN;
+      continue;
+    }
+
+    const window = data.slice(i - period + 1, i + 1);
+    const { slope, intercept } = linearRegression(window);
+    result[i] = fn(slope, intercept, window.length);
+  }
+
+  return result;
+}
+
+function rollingPairStats(
+  a: number[],
+  b: number[],
+  period: number,
+  fn: (a: number[], b: number[]) => number,
+): number[] {
+  const length = Math.min(a.length, b.length);
+  const result: number[] = new Array(length);
+
+  for (let i = 0; i < length; i++) {
+    if (i < period - 1) {
+      result[i] = NaN;
+      continue;
+    }
+
+    result[i] = fn(a.slice(i - period + 1, i + 1), b.slice(i - period + 1, i + 1));
+  }
+
+  return result;
+}
+
+function average(values: number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function variance(values: number[]): number {
+  const mean = average(values);
+  return values.reduce((sum, value) => {
+    const diff = value - mean;
+    return sum + diff * diff;
+  }, 0) / values.length;
+}
+
+function covariance(a: number[], b: number[]): number {
+  const meanA = average(a);
+  const meanB = average(b);
+  let sum = 0;
+
+  for (let i = 0; i < a.length; i++) {
+    sum += (a[i] - meanA) * (b[i] - meanB);
+  }
+
+  return sum / a.length;
+}
+
+function linearRegression(values: number[]): { slope: number; intercept: number } {
+  const n = values.length;
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumXX = 0;
+
+  for (let i = 0; i < values.length; i++) {
+    const x = i;
+    const y = values[i];
+    sumX += x;
+    sumY += y;
+    sumXY += x * y;
+    sumXX += x * x;
+  }
+
+  const denominator = n * sumXX - sumX * sumX;
+  if (denominator === 0) {
+    return { slope: 0, intercept: values[values.length - 1] };
+  }
+
+  const slope = (n * sumXY - sumX * sumY) / denominator;
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
 }

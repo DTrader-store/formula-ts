@@ -122,29 +122,22 @@ describe('Logical Functions', () => {
       const data = [1, 1, 1, 1];
       const result = EVERY(data, 3);
 
-      // [NaN, NaN, 1, 1]
-      expect(Number.isNaN(result[0])).toBe(true);
-      expect(Number.isNaN(result[1])).toBe(true);
-      expect(result[2]).toBe(1);
-      expect(result[3]).toBe(1);
+      // Go/TDX-compatible warmup bars return 0 until enough history exists.
+      expect(result).toEqual([0, 0, 1, 1]);
     });
 
     it('should return 0 when not all values in N period are non-zero', () => {
       const data = [1, 1, 0, 1];
       const result = EVERY(data, 3);
 
-      // [NaN, NaN, 0, 0]
-      expect(Number.isNaN(result[0])).toBe(true);
-      expect(Number.isNaN(result[1])).toBe(true);
-      expect(result[2]).toBe(0);
-      expect(result[3]).toBe(0);
+      expect(result).toEqual([0, 0, 0, 0]);
     });
 
     it('should check N=2 period correctly', () => {
       const data = [1, 0, 1, 1, 0];
       const result = EVERY(data, 2);
 
-      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[0]).toBe(0);
       expect(result[1]).toBe(0); // [1, 0] has zero
       expect(result[2]).toBe(0); // [0, 1] has zero
       expect(result[3]).toBe(1); // [1, 1] all non-zero
@@ -155,17 +148,14 @@ describe('Logical Functions', () => {
       const data = [0, 0, 0, 0];
       const result = EVERY(data, 2);
 
-      expect(Number.isNaN(result[0])).toBe(true);
-      expect(result[1]).toBe(0);
-      expect(result[2]).toBe(0);
-      expect(result[3]).toBe(0);
+      expect(result).toEqual([0, 0, 0, 0]);
     });
 
     it('should handle mixed positive and negative values as non-zero', () => {
       const data = [1, -1, 0.5, -0.5];
       const result = EVERY(data, 2);
 
-      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[0]).toBe(0);
       expect(result[1]).toBe(1); // [1, -1] all non-zero
       expect(result[2]).toBe(1); // [-1, 0.5] all non-zero
       expect(result[3]).toBe(1); // [0.5, -0.5] all non-zero
@@ -177,29 +167,22 @@ describe('Logical Functions', () => {
       const data = [0, 0, 1, 0];
       const result = EXIST(data, 3);
 
-      // [NaN, NaN, 1, 1]
-      expect(Number.isNaN(result[0])).toBe(true);
-      expect(Number.isNaN(result[1])).toBe(true);
-      expect(result[2]).toBe(1);
-      expect(result[3]).toBe(1);
+      // Go/TDX-compatible warmup bars return 0 until enough history exists.
+      expect(result).toEqual([0, 0, 1, 1]);
     });
 
     it('should return 0 when all values in N period are zero', () => {
       const data = [0, 0, 0, 1];
       const result = EXIST(data, 3);
 
-      // [NaN, NaN, 0, 1]
-      expect(Number.isNaN(result[0])).toBe(true);
-      expect(Number.isNaN(result[1])).toBe(true);
-      expect(result[2]).toBe(0);
-      expect(result[3]).toBe(1);
+      expect(result).toEqual([0, 0, 0, 1]);
     });
 
     it('should check N=2 period correctly', () => {
       const data = [1, 0, 0, 1, 0];
       const result = EXIST(data, 2);
 
-      expect(Number.isNaN(result[0])).toBe(true);
+      expect(result[0]).toBe(0);
       expect(result[1]).toBe(1); // [1, 0] has non-zero
       expect(result[2]).toBe(0); // [0, 0] all zeros
       expect(result[3]).toBe(1); // [0, 1] has non-zero
@@ -210,10 +193,7 @@ describe('Logical Functions', () => {
       const data = [1, 2, 3, 4];
       const result = EXIST(data, 2);
 
-      expect(Number.isNaN(result[0])).toBe(true);
-      expect(result[1]).toBe(1);
-      expect(result[2]).toBe(1);
-      expect(result[3]).toBe(1);
+      expect(result).toEqual([0, 1, 1, 1]);
     });
   });
 
@@ -222,8 +202,7 @@ describe('Logical Functions', () => {
       const data = [0, 1, 0, 0, 1];
       const result = BARSLAST(data);
 
-      // [1, 0, 1, 2, 0]
-      expect(result[0]).toBe(1); // No previous non-zero, distance is 1
+      expect(Number.isNaN(result[0])).toBe(true); // No previous non-zero
       expect(result[1]).toBe(0); // Current is non-zero
       expect(result[2]).toBe(1); // 1 bar since last non-zero
       expect(result[3]).toBe(2); // 2 bars since last non-zero
@@ -234,10 +213,7 @@ describe('Logical Functions', () => {
       const data = [0, 0, 0];
       const result = BARSLAST(data);
 
-      // [1, 2, 3]
-      expect(result[0]).toBe(1);
-      expect(result[1]).toBe(2);
-      expect(result[2]).toBe(3);
+      expect(result.every((value) => Number.isNaN(value))).toBe(true);
     });
 
     it('should reset to 0 when non-zero value appears', () => {
@@ -264,8 +240,7 @@ describe('Logical Functions', () => {
       const data = [0, -1, 0, 0];
       const result = BARSLAST(data);
 
-      // [1, 0, 1, 2]
-      expect(result[0]).toBe(1);
+      expect(Number.isNaN(result[0])).toBe(true);
       expect(result[1]).toBe(0);
       expect(result[2]).toBe(1);
       expect(result[3]).toBe(2);

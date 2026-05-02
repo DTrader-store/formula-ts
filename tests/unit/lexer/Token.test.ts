@@ -84,6 +84,7 @@ describe('Token', () => {
     it('should have all required token types', () => {
       const requiredTypes = [
         'NUMBER',
+        'STRING',
         'IDENTIFIER',
         'PLUS',
         'MINUS',
@@ -108,6 +109,9 @@ describe('Token', () => {
         'LINETHICK',
         'DOTLINE',
         'STICK',
+        'COLORSTICK',
+        'VOLSTICK',
+        'NODRAW',
         'NEWLINE',
         'EOF',
       ];
@@ -119,7 +123,7 @@ describe('Token', () => {
 
     it('should have correct number of token types', () => {
       const tokenTypes = Object.keys(TokenType);
-      expect(tokenTypes.length).toBe(27);
+      expect(tokenTypes.length).toBe(31);
     });
   });
 

@@ -8,6 +8,10 @@ export interface LineStyle {
   lineWidth?: number;
   /** Style of the line ('solid', 'dashed', 'dotted', etc.) */
   lineStyle?: string;
+  /** TDX draw method such as stick/colorstick/volstick */
+  drawMethod?: string;
+  /** Whether output is hidden from chart drawing */
+  hidden?: boolean;
 }
 
 /**
@@ -23,6 +27,22 @@ export interface OutputLine {
 }
 
 /**
+ * Rendering-agnostic drawing event emitted by formula drawing functions
+ */
+export interface DrawingEvent {
+  /** Builtin function that emitted the event, such as DRAWTEXT or DRAWLINE */
+  function: string;
+  /** Primary bar index for the event */
+  barIndex: number;
+  /** Numeric payload used by downstream chart adapters */
+  values: Record<string, number>;
+  /** Optional text payload */
+  text?: string;
+  /** Optional non-numeric payload for future adapters */
+  meta?: Record<string, string>;
+}
+
+/**
  * Result of formula calculation containing outputs and variables
  */
 export interface FormulaResult {
@@ -30,4 +50,6 @@ export interface FormulaResult {
   outputs: OutputLine[];
   /** Calculated variables and their values (arrays of numbers) */
   variables: Record<string, number[]>;
+  /** Rendering-agnostic drawing events emitted by formulas */
+  drawings?: DrawingEvent[];
 }

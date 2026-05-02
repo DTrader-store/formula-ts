@@ -12,10 +12,24 @@ export function IF(condition: number[], a: number[], b: number[]): number[] {
   const result: number[] = new Array(length);
 
   for (let i = 0; i < length; i++) {
-    result[i] = condition[i] !== 0 ? a[i] : b[i];
+    result[i] = condition[i] !== 0 && !Number.isNaN(condition[i]) ? a[i] : b[i];
   }
 
   return result;
+}
+
+/**
+ * IFF - Alias for IF
+ */
+export function IFF(condition: number[], a: number[], b: number[]): number[] {
+  return IF(condition, a, b);
+}
+
+/**
+ * IFN - Inverted IF. Returns A when condition is false, otherwise B.
+ */
+export function IFN(condition: number[], a: number[], b: number[]): number[] {
+  return IF(condition, b, a);
 }
 
 /**
@@ -46,6 +60,32 @@ export function CROSS(a: number[], b: number[]): number[] {
 }
 
 /**
+ * LONGCROSS - Cross above after A has stayed below B for N bars.
+ */
+export function LONGCROSS(a: number[], b: number[], period: number): number[] {
+  const length = Math.min(a.length, b.length);
+  const n = Math.floor(period);
+  const result: number[] = new Array(length).fill(0);
+
+  for (let i = 1; i < length; i++) {
+    if (!(a[i - 1] <= b[i - 1] && a[i] > b[i]) || i < n) {
+      continue;
+    }
+
+    let stayedBelow = true;
+    for (let j = 1; j <= n; j++) {
+      if (a[i - j] >= b[i - j]) {
+        stayedBelow = false;
+        break;
+      }
+    }
+    result[i] = stayedBelow ? 1 : 0;
+  }
+
+  return result;
+}
+
+/**
  * EVERY - Check if all values in N periods are non-zero
  * Returns 1 if all values in the last N periods are non-zero, 0 otherwise
  * First N-1 values are NaN (not enough data)
@@ -55,18 +95,15 @@ export function CROSS(a: number[], b: number[]): number[] {
  * @returns Array with results (1 = all non-zero, 0 = at least one zero, NaN = not enough data)
  */
 export function EVERY(data: number[], period: number): number[] {
-  const result: number[] = new Array(data.length);
+  const result: number[] = new Array(data.length).fill(0);
 
-  // First period-1 values are NaN
-  for (let i = 0; i < period - 1; i++) {
-    result[i] = NaN;
-  }
+  const n = Math.floor(period);
 
   // Calculate for remaining values
-  for (let i = period - 1; i < data.length; i++) {
+  for (let i = n - 1; i < data.length; i++) {
     let allNonZero = true;
-    for (let j = i - period + 1; j <= i; j++) {
-      if (data[j] === 0) {
+    for (let j = i - n + 1; j <= i; j++) {
+      if (data[j] === 0 || Number.isNaN(data[j])) {
         allNonZero = false;
         break;
       }
@@ -87,18 +124,15 @@ export function EVERY(data: number[], period: number): number[] {
  * @returns Array with results (1 = at least one non-zero, 0 = all zero, NaN = not enough data)
  */
 export function EXIST(data: number[], period: number): number[] {
-  const result: number[] = new Array(data.length);
+  const result: number[] = new Array(data.length).fill(0);
 
-  // First period-1 values are NaN
-  for (let i = 0; i < period - 1; i++) {
-    result[i] = NaN;
-  }
+  const n = Math.floor(period);
 
   // Calculate for remaining values
-  for (let i = period - 1; i < data.length; i++) {
+  for (let i = n - 1; i < data.length; i++) {
     let hasNonZero = false;
-    for (let j = i - period + 1; j <= i; j++) {
-      if (data[j] !== 0) {
+    for (let j = i - n + 1; j <= i; j++) {
+      if (data[j] !== 0 && !Number.isNaN(data[j])) {
         hasNonZero = true;
         break;
       }
@@ -124,7 +158,7 @@ export function BARSLAST(data: number[]): number[] {
   let lastNonZeroIndex = -1; // Index of last non-zero value
 
   for (let i = 0; i < data.length; i++) {
-    if (data[i] !== 0) {
+    if (data[i] !== 0 && !Number.isNaN(data[i])) {
       // Current value is non-zero
       result[i] = 0;
       lastNonZeroIndex = i;
@@ -133,8 +167,27 @@ export function BARSLAST(data: number[]): number[] {
       result[i] = i - lastNonZeroIndex;
     } else {
       // No previous non-zero value exists
-      result[i] = i + 1;
+      result[i] = NaN;
     }
+  }
+
+  return result;
+}
+
+/**
+ * BARSLASTCOUNT - Consecutive true count ending at each bar.
+ */
+export function BARSLASTCOUNT(data: number[]): number[] {
+  const result: number[] = new Array(data.length);
+  let count = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    if (data[i] !== 0 && !Number.isNaN(data[i])) {
+      count++;
+    } else {
+      count = 0;
+    }
+    result[i] = count;
   }
 
   return result;
@@ -161,7 +214,7 @@ export function COUNT(data: number[], period: number): number[] {
   for (let i = period - 1; i < data.length; i++) {
     let count = 0;
     for (let j = i - period + 1; j <= i; j++) {
-      if (data[j] !== 0) {
+      if (data[j] !== 0 && !Number.isNaN(data[j])) {
         count++;
       }
     }
@@ -169,4 +222,29 @@ export function COUNT(data: number[], period: number): number[] {
   }
 
   return result;
+}
+
+/**
+ * FILTER - Keep a signal, then suppress following signals for N bars.
+ */
+export function FILTER(data: number[], period: number): number[] {
+  const n = Math.floor(period);
+  const result: number[] = new Array(data.length).fill(0);
+  let lastSignal = -n - 1;
+
+  for (let i = 0; i < data.length; i++) {
+    if (data[i] !== 0 && !Number.isNaN(data[i]) && i - lastSignal >= n) {
+      result[i] = 1;
+      lastSignal = i;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * NOT - Logical negation, treating NaN as false.
+ */
+export function NOT(data: number[]): number[] {
+  return data.map((value) => (value !== 0 && !Number.isNaN(value) ? 0 : 1));
 }

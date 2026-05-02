@@ -10,15 +10,18 @@ A TypeScript implementation of a formula parser and interpreter for technical an
 
 - **Complete Lexer**: Tokenizes formula source code with support for:
   - Numbers (integers, floats, decimals)
-  - Identifiers and keywords
+  - ASCII and unicode identifiers, including Chinese formula names
+  - Single-quoted and double-quoted string literals
   - Operators (+, -, *, /, >, <, >=, <=, ==, !=, :)
   - Parentheses and semicolons
-  - Comments (# line comments)
+  - `//` line comments and `{ ... }` block comments
 
 - **Robust Parser**: Builds Abstract Syntax Trees (AST) with support for:
   - Binary operations (arithmetic and comparison)
   - Function calls
   - Variable assignments
+  - Standalone expression statements, including drawing functions
+  - Output style suffixes: `COLOR*`, `LINETHICK*`, `DOTLINE`, `STICK`, `COLORSTICK`, `VOLSTICK`, `NODRAW`
   - Nested expressions
 
 - **Powerful Interpreter**: Execute formulas with 76 built-in functions:
@@ -31,12 +34,13 @@ A TypeScript implementation of a formula parser and interpreter for technical an
   - **Chip Distribution** (6): WINNER, LWINNER, COST, VALUEWHEN, TOPRANGE, LOWRANGE
   - **Market Data Access** (8): OPEN, HIGH, LOW, CLOSE, VOL, AMOUNT, ADVANCE, DECLINE
   - **Time Functions** (8): DATE, TIME, YEAR, MONTH, DAY, HOUR, MINUTE, WEEKDAY
-  - **Period Functions** (4): PERIOD, BARSCOUNT, ISLASTBAR, BARSSINCE
+  - **Period Functions** (5): PERIOD, BARSCOUNT, ISLASTBAR, BARSSINCE, BARSTATUS
+  - **Drawing Events** (8): DRAWTEXT, DRAWICON, DRAWNUMBER, STICKLINE, DRAWLINE, POLYLINE, DRAWBAND, DRAWKLINE
 
-- **Incremental Calculation**: Optimize performance for streaming data
-  - 50-200% faster than full recalculation
-  - Single data point updates in < 10ms
-  - Ideal for real-time trading scenarios
+- **Incremental Calculation API**: Reuse previous result state for streaming data
+  - Maintains result consistency as new candles arrive
+  - Single data point updates are covered by performance tests
+  - Suitable for real-time trading scenarios where formulas are re-evaluated frequently
   - Handles 10,000+ data points efficiently
 
 - **Type-Safe**: Full TypeScript support with comprehensive type definitions
@@ -93,6 +97,7 @@ const data: MarketData[] = [
     low: 99.5,
     close: 101.25,
     volume: 1000000,
+    timestamp: new Date('2024-01-02T09:30:00.000Z').getTime(),
     amount: 101000000
   },
   // ... more data points
@@ -121,8 +126,8 @@ const formula = `
 
 // Prepare market data
 const marketData: MarketData[] = [
-  { open: 100, close: 102, high: 105, low: 99, volume: 1000 },
-  { open: 102, close: 101, high: 103, low: 100, volume: 1100 },
+  { open: 100, close: 102, high: 105, low: 99, volume: 1000, timestamp: 1704187800000 },
+  { open: 102, close: 101, high: 103, low: 100, volume: 1100, timestamp: 1704274200000 },
   // ... more data points
 ];
 
@@ -136,7 +141,7 @@ console.log('Variables:', result.variables);
 
 ### Incremental Calculation for Large Datasets
 
-For real-time scenarios with streaming data, use incremental evaluation to optimize performance:
+For real-time scenarios with streaming data, use incremental evaluation to reuse the previous result state:
 
 ```typescript
 import { FormulaEngine } from '@dtrader/formula-ts';
@@ -157,19 +162,19 @@ const result1 = engine.evaluate(formula, initialData);
 // Later, when new data arrives (e.g., 10 new candles)
 const newData: MarketData[] = [...initialData, ...newCandles]; // 1010 points
 
-// Incremental evaluation - only calculates for new 10 points!
+// Incremental evaluation using the previous FormulaResult as state
 const result2 = engine.evaluateIncremental(formula, newData, result1);
 
-// Performance: 50%+ faster than full recalculation
-// Single new point completes in < 10ms
+// Performance depends on formula shape and JavaScript runtime noise; the API
+// is tested for correctness and bounded latency on large datasets.
 ```
 
 **Benefits of Incremental Calculation:**
-- 50-200% faster than full recalculation
-- Single data point updates in < 10ms
-- Maintains result consistency
-- Ideal for real-time streaming scenarios
+- Maintains result consistency while appending new market data
+- Avoids callers having to manage previous variables/outputs manually
+- Useful for real-time streaming scenarios
 - Handles 10,000+ data points efficiently
+- Performance tests assert practical latency bounds instead of brittle fixed speedup ratios
 
 ## API Documentation
 
@@ -262,12 +267,44 @@ interface MarketData {
   high: number;
   low: number;
   volume: number;
+  timestamp: number;
   amount?: number;
+  tradableShares?: number;
+  advance?: number;
+  decline?: number;
 }
 
 function validateMarketData(data: unknown): data is MarketData;
 function getMarketDataLength(data: MarketData[]): number;
 ```
+
+### Formula Result and Drawing Events
+
+```typescript
+interface FormulaResult {
+  outputs: OutputLine[];
+  variables: Record<string, number[]>;
+  drawings?: DrawingEvent[];
+}
+
+interface DrawingEvent {
+  function: string;
+  barIndex: number;
+  values: Record<string, number>;
+  text?: string;
+  meta?: Record<string, string>;
+}
+```
+
+Drawing payloads follow these conventions:
+
+- `DRAWTEXT`: `values.price`, `text`
+- `DRAWICON` / `DRAWNUMBER`: `values.price`, `values.value`
+- `STICKLINE`: `values.price1`, `values.price2`, `values.width`, `values.empty`
+- `DRAWLINE`: `values.startBar`, `values.startPrice`, `values.endBar`, `values.endPrice`, `values.expand`
+- `POLYLINE`: `values.price`
+- `DRAWBAND`: `values.upper`, `values.upperColor`, `values.lower`, `values.lowerColor`
+- `DRAWKLINE`: `values.high`, `values.open`, `values.low`, `values.close`
 
 ### Error Classes
 
@@ -294,15 +331,26 @@ class RuntimeError extends FormulaError {
 ### Comments
 
 ```
-# This is a comment
-MA5:MA(CLOSE,5);  # Calculate 5-day moving average
+// This is a comment
+MA5:MA(CLOSE,5);  // Calculate 5-day moving average
+{ This is a block comment }
 ```
 
 ### Variable Assignment
 
 ```
-MA5:MA(CLOSE,5);
-MA10:MA(CLOSE,10);
+MA5 := MA(CLOSE,5);
+MA10 := MA(CLOSE,10);
+TREND: MA5 - MA10;
+```
+
+### Output Styles
+
+```
+MA5: MA(C,5), COLORRED, LINETHICK2;
+MACD: (DIF - DEA) * 2, COLORSTICK;
+VOLBAR: VOL, VOLSTICK;
+HIDDEN: MA(C,20), NODRAW;
 ```
 
 ### Arithmetic Operations
@@ -328,10 +376,20 @@ NOT_EQUAL:MA5!=MA10;          # Not equal
 ### Function Calls
 
 ```
-MA(CLOSE,5)                   # Moving average
-EMA(CLOSE,12)                 # Exponential moving average
-IF(CONDITION,A,B)             # Conditional
-CROSS(MA5,MA10)               # Crossover detection
+MA(CLOSE,5)                   // Moving average
+EMA(CLOSE,12)                 // Exponential moving average
+IF(CONDITION,A,B)             // Conditional
+CROSS(MA5,MA10)               // Crossover detection
+```
+
+### Drawing Event Functions
+
+Drawing functions do not render charts directly. They emit rendering-agnostic `DrawingEvent` objects in `FormulaResult.drawings`, so callers can map events to Lightweight Charts, Canvas, SVG, or another chart adapter.
+
+```
+PRICE: C, COLORBLACK;
+DRAWTEXT(CROSS(MA(C,5), MA(C,10)), C, 'B');
+SELL_MARK := DRAWICON(CROSS(MA(C,10), MA(C,5)), H, 2);
 ```
 
 ## Built-in Functions
@@ -628,6 +686,71 @@ GOLDEN:=CROSS(MA5,MA10);
 HOLD:BARSSINCE(GOLDEN);
 ```
 
+### BARSTATUS()
+Bar Status - returns `1` on the first bar, `2` on middle bars, and `3` on the last bar.
+
+```
+STATUS:BARSTATUS();
+```
+
+## Drawing Functions
+
+### DRAWTEXT(condition, price, text)
+Emit text markers when `condition` is true.
+
+```
+DRAWTEXT(CROSS(MA(C,5),MA(C,10)), C, 'B');
+```
+
+### DRAWICON(condition, price, iconType)
+Emit icon markers when `condition` is true.
+
+```
+DRAWICON(CROSS(MA(C,10),MA(C,5)), H, 2);
+```
+
+### DRAWNUMBER(condition, price, number)
+Emit numeric markers when `condition` is true.
+
+```
+DRAWNUMBER(C > O, C, C);
+```
+
+### STICKLINE(condition, price1, price2, width, empty)
+Emit stick-line events when `condition` is true.
+
+```
+STICKLINE(C > O, O, C, 2, 0);
+```
+
+### DRAWLINE(cond1, price1, cond2, price2, expand)
+Emit line segment events from start condition to end condition.
+
+```
+DRAWLINE(BARSTATUS() = 1, L, ISLASTBAR(), H, 0);
+```
+
+### POLYLINE(condition, price)
+Emit polyline points when `condition` is true.
+
+```
+POLYLINE(C > O, C);
+```
+
+### DRAWBAND(upper, upperColor, lower, lowerColor)
+Emit band events between two series.
+
+```
+DRAWBAND(H, 1, L, 2);
+```
+
+### DRAWKLINE(high, open, low, close)
+Emit custom K-line events.
+
+```
+DRAWKLINE(H, O, L, C);
+```
+
 ## Advanced Technical Indicators
 
 ### MACD - Moving Average Convergence Divergence
@@ -808,11 +931,11 @@ BEARISH:PSY12<25;
 
 ## Examples
 
-The project includes example formulas in the `examples/formulas/` directory:
+The project includes runnable formula examples in `demo/examples.ts`:
 
 ### Moving Average (MA)
 ```
-# examples/formulas/ma.txt
+// demo/examples.ts
 MA5:MA(CLOSE,5);
 MA10:MA(CLOSE,10);
 MA20:MA(CLOSE,20);
@@ -821,7 +944,7 @@ GOLDEN_CROSS:CROSS(MA5,MA10);
 
 ### MACD Indicator
 ```
-# examples/formulas/macd.txt
+// demo/examples.ts
 FAST:EMA(CLOSE,12);
 SLOW:EMA(CLOSE,26);
 MACD:FAST-SLOW;
@@ -832,7 +955,7 @@ BUY:CROSS(MACD,SIGNAL);
 
 ### KDJ Indicator
 ```
-# examples/formulas/kdj.txt
+// demo/examples.ts
 N:9;
 HH:HHV(HIGH,N);
 LL:LLV(LOW,N);
@@ -842,7 +965,7 @@ D:EMA(K,3);
 J:3*K-2*D;
 ```
 
-Sample market data is available in `examples/data/sample-market-data.json`.
+Sample market data helpers are available in `demo/examples.ts`.
 
 ## Development
 

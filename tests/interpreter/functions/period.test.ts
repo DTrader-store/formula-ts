@@ -216,14 +216,14 @@ describe('Period Functions', () => {
       const condition = [0, 0, 1, 0, 0, 0];
       const result = BARSSINCE(condition);
 
-      expect(result).toEqual([0, 0, 0, 1, 2, 3]);
+      expect(result).toEqual([NaN, NaN, 0, 1, 2, 3]);
     });
 
     it('should return all zeros if condition never true', () => {
       const condition = [0, 0, 0, 0, 0];
       const result = BARSSINCE(condition);
 
-      expect(result).toEqual([0, 0, 0, 0, 0]);
+      expect(result.every((value) => Number.isNaN(value))).toBe(true);
     });
 
     it('should count from first occurrence even if multiple matches', () => {
@@ -231,7 +231,7 @@ describe('Period Functions', () => {
       const result = BARSSINCE(condition);
 
       // Counts from first true at index 2
-      expect(result).toEqual([0, 0, 0, 1, 2, 3, 4]);
+      expect(result).toEqual([NaN, NaN, 0, 1, 2, 3, 4]);
     });
 
     it('should start counting immediately if first bar is true', () => {
@@ -253,12 +253,12 @@ describe('Period Functions', () => {
       const result = BARSSINCE(condition);
 
       // First non-zero is at index 2
-      expect(result).toEqual([0, 0, 0, 1, 2, 3]);
+      expect(result).toEqual([NaN, NaN, 0, 1, 2, 3]);
     });
 
     it('should work with single element', () => {
       expect(BARSSINCE([1])).toEqual([0]);
-      expect(BARSSINCE([0])).toEqual([0]);
+      expect(Number.isNaN(BARSSINCE([0])[0])).toBe(true);
     });
 
     it('should work with empty array', () => {
@@ -272,7 +272,7 @@ describe('Period Functions', () => {
       const condition = [0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
       const result = BARSSINCE(condition);
 
-      expect(result).toEqual([0, 0, 0, 0, 0, 0, 1, 2, 3, 4]);
+      expect(result).toEqual([NaN, NaN, NaN, NaN, NaN, 0, 1, 2, 3, 4]);
     });
   });
 
@@ -340,7 +340,7 @@ describe('Period Functions', () => {
       const condition = [0, 0, 0, 0, 1];
       const result = BARSSINCE(condition);
 
-      expect(result).toEqual([0, 0, 0, 0, 0]);
+      expect(result).toEqual([NaN, NaN, NaN, NaN, 0]);
     });
 
     it('should handle all functions with maximum practical data size', () => {

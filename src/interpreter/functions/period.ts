@@ -65,15 +65,27 @@ export function PERIOD(timestamps: number[]): number[] {
 }
 
 /**
- * BARSCOUNT - Total number of bars
- * Returns the total count of bars in the data
- * All elements have the same value (total count)
+ * BARSCOUNT - Count valid bars seen so far
  *
  * @param dataLength - Length of the data array
  * @returns Array filled with the total bar count
  */
-export function BARSCOUNT(dataLength: number): number[] {
-  return new Array(dataLength).fill(dataLength);
+export function BARSCOUNT(data: number[] | number): number[] {
+  if (typeof data === 'number') {
+    return new Array(data).fill(data);
+  }
+
+  const result: number[] = new Array(data.length);
+  let count = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    if (!Number.isNaN(data[i])) {
+      count++;
+    }
+    result[i] = count;
+  }
+
+  return result;
 }
 
 /**
@@ -103,25 +115,65 @@ export function ISLASTBAR(dataLength: number): number[] {
  * @returns Array with count of bars since first true condition
  */
 export function BARSSINCE(condition: number[]): number[] {
-  const result = new Array(condition.length).fill(0);
+  const result = new Array(condition.length);
 
   // Find the first index where condition is true (non-zero)
   let firstTrueIndex = -1;
   for (let i = 0; i < condition.length; i++) {
-    if (condition[i] !== 0) {
+    if (condition[i] !== 0 && !Number.isNaN(condition[i])) {
       firstTrueIndex = i;
       break;
     }
   }
 
-  // If condition was never true, return all zeros
+  // If condition was never true, return all NaN values.
   if (firstTrueIndex === -1) {
+    result.fill(NaN);
     return result;
+  }
+
+  for (let i = 0; i < firstTrueIndex; i++) {
+    result[i] = NaN;
   }
 
   // Count bars since first true
   for (let i = firstTrueIndex; i < condition.length; i++) {
     result[i] = i - firstTrueIndex;
+  }
+
+  return result;
+}
+
+/**
+ * CURRBARSCOUNT - Distance from current bar to the last bar, counting current bar.
+ */
+export function CURRBARSCOUNT(dataLength: number): number[] {
+  return Array.from({ length: dataLength }, (_, index) => dataLength - index);
+}
+
+/**
+ * TOTALBARSCOUNT - Total number of bars repeated on every bar.
+ */
+export function TOTALBARSCOUNT(dataLength: number): number[] {
+  return new Array(dataLength).fill(dataLength);
+}
+
+/**
+ * SUMBARS - Number of bars needed for cumulative sum to reach target.
+ */
+export function SUMBARS(data: number[], target: number): number[] {
+  const result: number[] = new Array(data.length);
+
+  for (let i = 0; i < data.length; i++) {
+    let sum = 0;
+    result[i] = NaN;
+    for (let j = i; j >= 0; j--) {
+      sum += data[j];
+      if (sum >= target) {
+        result[i] = i - j + 1;
+        break;
+      }
+    }
   }
 
   return result;

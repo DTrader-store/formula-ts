@@ -23,6 +23,7 @@ export enum NodeType {
   // Literals and Identifiers
   Identifier = 'Identifier',
   NumberLiteral = 'NumberLiteral',
+  StringLiteral = 'StringLiteral',
 }
 
 /**
@@ -64,6 +65,9 @@ export enum UnaryOperator {
 export interface DrawingStyle {
   color?: string;
   size?: number;
+  lineStyle?: string;
+  drawMethod?: string;
+  hidden?: boolean;
   bold?: boolean;
   italic?: boolean;
 }
@@ -178,6 +182,14 @@ export interface NumberLiteral extends Expression {
 }
 
 /**
+ * String literal: text payload for drawing functions
+ */
+export interface StringLiteral extends Expression {
+  type: NodeType.StringLiteral;
+  value: string;
+}
+
+/**
  * Type guard functions for discriminated unions
  */
 
@@ -221,6 +233,10 @@ export function isNumberLiteral(node: ASTNode): node is NumberLiteral {
   return node.type === NodeType.NumberLiteral;
 }
 
+export function isStringLiteral(node: ASTNode): node is StringLiteral {
+  return node.type === NodeType.StringLiteral;
+}
+
 /**
  * Utility type for all possible AST nodes (discriminated union)
  */
@@ -234,4 +250,5 @@ export type AnyASTNode =
   | FunctionCall
   | ConditionalExpression
   | Identifier
-  | NumberLiteral;
+  | NumberLiteral
+  | StringLiteral;
