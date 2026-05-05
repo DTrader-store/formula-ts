@@ -4,261 +4,199 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 
-A TypeScript implementation of a formula parser and interpreter for technical analysis and financial indicators. Supports TDX (Tongdaxin) formula syntax for trading and technical analysis.
+Formula-TS 是一个用 TypeScript 编写的通达信公式解析和执行引擎。它可以把公式文本解析为 AST，并基于 OHLCV 行情数据计算技术指标、变量、输出线和绘图事件，适合接入 Web 金融应用、量化策略工具、指标回测和自定义图表渲染流程。
 
-## Features
+当前包名为 `@dtrader/formula-ts`，版本为 `1.0.0`，构建产物输出到 `dist/`，以 CommonJS 形式发布，同时提供完整 TypeScript 类型声明。
 
-- **Complete Lexer**: Tokenizes formula source code with support for:
-  - Numbers (integers, floats, decimals)
-  - ASCII and unicode identifiers, including Chinese formula names
-  - Single-quoted and double-quoted string literals
-  - Operators (+, -, *, /, >, <, >=, <=, ==, !=, :)
-  - Parentheses and semicolons
-  - `//` line comments and `{ ... }` block comments
+## 项目概览
 
-- **Robust Parser**: Builds Abstract Syntax Trees (AST) with support for:
-  - Binary operations (arithmetic and comparison)
-  - Function calls
-  - Variable assignments
-  - Standalone expression statements, including drawing functions
-  - Output style suffixes: `COLOR*`, `LINETHICK*`, `DOTLINE`, `STICK`, `COLORSTICK`, `VOLSTICK`, `NODRAW`
-  - Nested expressions
+这个仓库主要包含四部分：
 
-- **Powerful Interpreter**: Execute formulas with 76 built-in functions:
-  - **Math & Statistics** (14): MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND, STD, VAR, MEDIAN, AVEDEV
-  - **Reference & Comparison** (3): REF, HHV, LLV
-  - **Logical Operations** (6): IF, CROSS, EVERY, EXIST, BARSLAST, COUNT
-  - **Basic Technical Analysis** (3): SMA, WMA, RSI
-  - **Advanced Technical Indicators** (21): MACD (DIF, DEA, MACD), KDJ (K, D, J), SAR, CCI, DMI (PDI, MDI, ADX, ADXR), TRIX, OBV, BIAS, ROC, MTM, WR, PSY
-  - **Pattern Detection** (5): UPNDAY, DOWNNDAY, NDAY, RANGE, BETWEEN
-  - **Chip Distribution** (6): WINNER, LWINNER, COST, VALUEWHEN, TOPRANGE, LOWRANGE
-  - **Market Data Access** (8): OPEN, HIGH, LOW, CLOSE, VOL, AMOUNT, ADVANCE, DECLINE
-  - **Time Functions** (8): DATE, TIME, YEAR, MONTH, DAY, HOUR, MINUTE, WEEKDAY
-  - **Period Functions** (5): PERIOD, BARSCOUNT, ISLASTBAR, BARSSINCE, BARSTATUS
-  - **Drawing Events** (8): DRAWTEXT, DRAWICON, DRAWNUMBER, STICKLINE, DRAWLINE, POLYLINE, DRAWBAND, DRAWKLINE
+- `src/lexer`：词法分析器，把公式源码转换为 Token，支持数字、字符串、Unicode 标识符、运算符、注释和绘图样式关键字。
+- `src/parser`：递归下降 Parser，把 Token 转为 AST，支持变量声明、输出声明、表达式语句、函数调用、运算符优先级和输出样式。
+- `src/interpreter`：解释器和执行上下文，负责读取市场数据、计算表达式、调用内置函数、保存变量/输出和收集绘图事件。
+- `demo`、`examples`、`tests`、`vscode-extension`：分别提供浏览器演示、公式示例、单元/集成/性能测试，以及 VSCode 通达信公式语法高亮扩展。
 
-- **Incremental Calculation API**: Reuse previous result state for streaming data
-  - Maintains result consistency as new candles arrive
-  - Single data point updates are covered by performance tests
-  - Suitable for real-time trading scenarios where formulas are re-evaluated frequently
-  - Handles 10,000+ data points efficiently
+## 核心能力
 
-- **Type-Safe**: Full TypeScript support with comprehensive type definitions
-- **Error Handling**: Detailed error messages with line/column information
-- **Well-Tested**: Extensive test coverage (>80%)
+- **通达信风格语法**：支持 `:=` 变量声明、`:` 输出声明、分号结尾、函数调用、括号表达式、`AND` / `OR` 逻辑运算。
+- **行情字段访问**：支持 `OPEN/O`、`HIGH/H`、`LOW/L`、`CLOSE/C`、`VOLUME/VOL/V`、`AMOUNT/AMO`、`ADVANCE`、`DECLINE` 等字段。
+- **内置函数体系**：覆盖数学、引用、逻辑、统计、技术指标、形态识别、筹码分布、行情访问、时间周期和绘图事件函数。
+- **高级指标**：包含 MACD、KDJ、SAR、CCI、DMI、TRIX、OBV、BIAS、ROC、MTM、WR、PSY 等指标函数。
+- **绘图事件输出**：`DRAWTEXT`、`DRAWICON`、`STICKLINE`、`DRAWLINE` 等函数不会直接渲染图表，而是生成结构化 `DrawingEvent`，方便调用方适配 Canvas、SVG、Lightweight Charts 或其他图表库。
+- **增量计算 API**：`evaluateIncremental` 可在追加新 K 线后复用上一次结果，减少调用方手动维护历史变量和输出的成本。
+- **类型安全与错误处理**：导出市场数据、公式结果、AST、Token、错误类型等定义，词法、语法和运行期错误有独立错误类。
 
-## Installation
-
-### NPM
+## 安装
 
 ```bash
 npm install @dtrader/formula-ts
 ```
 
-### Yarn
+也可以使用 Yarn 或 PNPM：
 
 ```bash
 yarn add @dtrader/formula-ts
-```
-
-### PNPM
-
-```bash
 pnpm add @dtrader/formula-ts
 ```
 
-## Quick Start
+## 快速开始
 
-### Basic Usage
+### 使用 FormulaEngine 计算指标
+
+```typescript
+import { FormulaEngine, MarketData } from '@dtrader/formula-ts';
+
+const engine = new FormulaEngine();
+
+const formula = `
+  DIF := EMA(CLOSE, 12) - EMA(CLOSE, 26);
+  DEA := EMA(DIF, 9);
+  MACD: (DIF - DEA) * 2, COLORSTICK;
+`;
+
+const marketData: MarketData[] = [
+  { open: 100, high: 105, low: 99, close: 102, volume: 1000, timestamp: 1704187800000 },
+  { open: 102, high: 103, low: 100, close: 101, volume: 1100, timestamp: 1704274200000 },
+  { open: 101, high: 106, low: 101, close: 103, volume: 1200, timestamp: 1704360600000 },
+  // 继续追加更多 K 线数据
+];
+
+const result = engine.evaluate(formula, marketData);
+
+console.log(result.outputs[0].name);      // MACD
+console.log(result.outputs[0].data);      // MACD 序列
+console.log(result.variables.DIF);        // 中间变量
+console.log(result.drawings);             // 绘图事件
+```
+
+### 只解析公式
+
+```typescript
+import { FormulaEngine } from '@dtrader/formula-ts';
+
+const engine = new FormulaEngine();
+const ast = engine.parse('MA5: MA(CLOSE, 5), COLORRED;');
+
+console.log(ast.body);
+```
+
+### 单独使用 Lexer 和 Parser
 
 ```typescript
 import { Lexer, Parser } from '@dtrader/formula-ts';
 
-// 1. Tokenize the formula
-const lexer = new Lexer('MA5:MA(CLOSE,5);');
+const lexer = new Lexer('MA5: MA(CLOSE, 5);');
 const tokens = lexer.tokenize();
 
-// 2. Parse into AST
 const parser = new Parser(tokens);
 const ast = parser.parse();
-
-console.log(ast);
 ```
 
-### Working with Market Data
+### 校验市场数据
 
 ```typescript
 import { MarketData, validateMarketData } from '@dtrader/formula-ts';
 
-const data: MarketData[] = [
-  {
-    open: 100.0,
-    high: 102.5,
-    low: 99.5,
-    close: 101.25,
-    volume: 1000000,
-    timestamp: new Date('2024-01-02T09:30:00.000Z').getTime(),
-    amount: 101000000
-  },
-  // ... more data points
-];
+const item: MarketData = {
+  open: 100,
+  high: 105,
+  low: 99,
+  close: 102,
+  volume: 1000,
+  amount: 102000,
+  timestamp: Date.now(),
+};
 
-// Validate market data
-const isValid = data.every(validateMarketData);
-console.log('Data is valid:', isValid);
+if (!validateMarketData(item)) {
+  throw new Error('行情数据不合法');
+}
 ```
 
-### Complete Example: MACD Indicator
+### 增量计算
 
 ```typescript
-import { FormulaEngine } from '@dtrader/formula-ts';
-import { MarketData } from '@dtrader/formula-ts';
-
-// Create formula engine
-const engine = new FormulaEngine();
-
-// Define MACD formula
-const formula = `
-  DIF := EMA(CLOSE, 12) - EMA(CLOSE, 26);
-  DEA := EMA(DIF, 9);
-  MACD: (DIF - DEA) * 2;
-`;
-
-// Prepare market data
-const marketData: MarketData[] = [
-  { open: 100, close: 102, high: 105, low: 99, volume: 1000, timestamp: 1704187800000 },
-  { open: 102, close: 101, high: 103, low: 100, volume: 1100, timestamp: 1704274200000 },
-  // ... more data points
-];
-
-// Evaluate the formula
-const result = engine.evaluate(formula, marketData);
-
-// Access results
-console.log('MACD values:', result.outputs[0].data);
-console.log('Variables:', result.variables);
-```
-
-### Incremental Calculation for Large Datasets
-
-For real-time scenarios with streaming data, use incremental evaluation to reuse the previous result state:
-
-```typescript
-import { FormulaEngine } from '@dtrader/formula-ts';
-import { MarketData } from '@dtrader/formula-ts';
+import { FormulaEngine, MarketData } from '@dtrader/formula-ts';
 
 const engine = new FormulaEngine();
 const formula = `
   MA5 := MA(CLOSE, 5);
   MA10 := MA(CLOSE, 10);
-  MA20 := MA(CLOSE, 20);
-  SIGNAL: IF(MA5 > MA10 AND MA10 > MA20, 1, 0);
+  SIGNAL: IF(CROSS(MA5, MA10), 1, 0);
 `;
 
-// Initial calculation with 1000 data points
-const initialData: MarketData[] = [...]; // 1000 points
-const result1 = engine.evaluate(formula, initialData);
+const firstBatch: MarketData[] = loadInitialBars();
+const firstResult = engine.evaluate(formula, firstBatch);
 
-// Later, when new data arrives (e.g., 10 new candles)
-const newData: MarketData[] = [...initialData, ...newCandles]; // 1010 points
+const nextBatch: MarketData[] = [...firstBatch, ...loadNewBars()];
+const nextResult = engine.evaluateIncremental(formula, nextBatch, firstResult);
 
-// Incremental evaluation using the previous FormulaResult as state
-const result2 = engine.evaluateIncremental(formula, newData, result1);
-
-// Performance depends on formula shape and JavaScript runtime noise; the API
-// is tested for correctness and bounded latency on large datasets.
+console.log(nextResult.outputs);
 ```
 
-**Benefits of Incremental Calculation:**
-- Maintains result consistency while appending new market data
-- Avoids callers having to manage previous variables/outputs manually
-- Useful for real-time streaming scenarios
-- Handles 10,000+ data points efficiently
-- Performance tests assert practical latency bounds instead of brittle fixed speedup ratios
+## 公式语法
 
-## API Documentation
+### 变量和输出
 
-### Lexer
+```tdx
+MA5 := MA(CLOSE, 5);
+MA10 := MA(CLOSE, 10);
+TREND: MA5 - MA10;
+```
 
-The `Lexer` class tokenizes formula source code into tokens.
+`:=` 用于声明中间变量，结果会进入 `FormulaResult.variables`。`:` 用于声明输出线，结果会同时进入 `FormulaResult.outputs` 和 `variables`。
+
+### 表达式
+
+```tdx
+RANGE: HIGH - LOW;
+MID: (HIGH + LOW) / 2;
+ABOVE: CLOSE > MA(CLOSE, 20);
+SIGNAL: CLOSE > OPEN AND VOL > MA(VOL, 5);
+```
+
+支持 `+`、`-`、`*`、`/`、`>`、`<`、`>=`、`<=`、`=`、`<>`、`AND`、`OR`。比较和逻辑表达式返回 `1` 或 `0`。
+
+### 注释和字符串
+
+```tdx
+// 单行注释
+{ 块注释 }
+DRAWTEXT(CROSS(MA(C, 5), MA(C, 10)), C, 'B');
+```
+
+字符串支持单引号和双引号，主要用于绘图事件文本。
+
+### 输出样式
+
+```tdx
+MA5: MA(C, 5), COLORRED, LINETHICK2;
+MACD: (DIF - DEA) * 2, COLORSTICK;
+VOLBAR: VOL, VOLSTICK;
+HIDDEN: MA(C, 20), NODRAW;
+```
+
+Parser 会把样式解析到输出声明中，`FormulaEngine.evaluate` 会把样式带到 `OutputLine.style`。
+
+## 主要 API
+
+### FormulaEngine
 
 ```typescript
-class Lexer {
-  constructor(source: string);
-  tokenize(): Token[];
+class FormulaEngine {
+  constructor(registry?: FunctionRegistry);
+  parse(formula: string): Program;
+  evaluate(formula: string, marketData: MarketData[]): FormulaResult;
+  evaluateIncremental(
+    formula: string,
+    newData: MarketData[],
+    previousResult: FormulaResult
+  ): FormulaResult;
+  getRegistry(): FunctionRegistry;
 }
 ```
 
-**Example:**
-```typescript
-const lexer = new Lexer('MA(CLOSE,5)');
-const tokens = lexer.tokenize();
-// Returns array of Token objects
-```
-
-### Parser
-
-The `Parser` class builds an Abstract Syntax Tree from tokens.
-
-```typescript
-class Parser {
-  constructor(tokens: Token[]);
-  parse(): Program;
-}
-```
-
-**Example:**
-```typescript
-const parser = new Parser(tokens);
-const ast = parser.parse();
-// Returns a Program node containing statements
-```
-
-### Token Types
-
-```typescript
-enum TokenType {
-  NUMBER,
-  IDENTIFIER,
-  PLUS,
-  MINUS,
-  MULTIPLY,
-  DIVIDE,
-  LPAREN,
-  RPAREN,
-  COMMA,
-  SEMICOLON,
-  COLON,
-  GREATER_THAN,
-  LESS_THAN,
-  GREATER_EQUAL,
-  LESS_EQUAL,
-  EQUAL,
-  NOT_EQUAL,
-  COMMENT,
-  EOF
-}
-```
-
-### AST Node Types
-
-All AST nodes extend the `ASTNode` base interface:
-
-```typescript
-interface ASTNode {
-  kind: string;
-}
-```
-
-**Node Types:**
-- `Program`: Root node containing statements
-- `AssignmentStatement`: Variable assignment (e.g., `MA5:MA(CLOSE,5)`)
-- `BinaryExpression`: Binary operations (e.g., `A + B`)
-- `FunctionCall`: Function invocation (e.g., `MA(CLOSE,5)`)
-- `Identifier`: Variable reference (e.g., `CLOSE`)
-- `NumberLiteral`: Numeric value (e.g., `5`, `3.14`)
-
-### Market Data
+### MarketData
 
 ```typescript
 interface MarketData {
@@ -273,18 +211,23 @@ interface MarketData {
   advance?: number;
   decline?: number;
 }
-
-function validateMarketData(data: unknown): data is MarketData;
-function getMarketDataLength(data: MarketData[]): number;
 ```
 
-### Formula Result and Drawing Events
+`timestamp` 使用毫秒级 Unix 时间戳。`amount`、`tradableShares`、`advance`、`decline` 是可选字段，对应成交额、流通股本和指数上涨/下跌家数等扩展数据。
+
+### FormulaResult
 
 ```typescript
 interface FormulaResult {
   outputs: OutputLine[];
   variables: Record<string, number[]>;
   drawings?: DrawingEvent[];
+}
+
+interface OutputLine {
+  name: string;
+  data: number[];
+  style?: LineStyle;
 }
 
 interface DrawingEvent {
@@ -296,831 +239,182 @@ interface DrawingEvent {
 }
 ```
 
-Drawing payloads follow these conventions:
-
-- `DRAWTEXT`: `values.price`, `text`
-- `DRAWICON` / `DRAWNUMBER`: `values.price`, `values.value`
-- `STICKLINE`: `values.price1`, `values.price2`, `values.width`, `values.empty`
-- `DRAWLINE`: `values.startBar`, `values.startPrice`, `values.endBar`, `values.endPrice`, `values.expand`
-- `POLYLINE`: `values.price`
-- `DRAWBAND`: `values.upper`, `values.upperColor`, `values.lower`, `values.lowerColor`
-- `DRAWKLINE`: `values.high`, `values.open`, `values.low`, `values.close`
-
-### Error Classes
+### 错误类型
 
 ```typescript
-class FormulaError extends Error {
-  constructor(message: string);
-}
-
-class LexerError extends FormulaError {
-  constructor(message: string, line: number, column: number);
-}
-
-class ParserError extends FormulaError {
-  constructor(message: string, token?: Token);
-}
-
-class RuntimeError extends FormulaError {
-  constructor(message: string);
-}
+import {
+  FormulaError,
+  LexerError,
+  ParserError,
+  RuntimeError,
+} from '@dtrader/formula-ts';
 ```
 
-## Formula Syntax
+- `LexerError`：非法字符、未闭合字符串、未闭合块注释等词法错误。
+- `ParserError`：缺少分号、括号不匹配、函数参数为空等语法错误。
+- `RuntimeError` / 普通运行期错误：未知函数、未知标识符、参数数量不匹配、空行情数据等执行错误。
 
-### Comments
+## 内置函数分类
 
+### 数学与统计
+
+- 数学序列：`MA`、`EMA`、`SUM`、`MAX`、`MIN`、`ABS`、`SQRT`、`POW`、`EXP`、`LN`、`LOG`、`MOD`
+- 取整和三角：`CEILING`、`FLOOR`、`INTPART`、`FRACPART`、`ROUND`、`ROUND2`、`SIGN`、`SIN`、`COS`、`TAN`、`ASIN`、`ACOS`、`ATAN`
+- 统计：`STD`、`STDP`、`STDDEV`、`VAR`、`VARP`、`DEVSQ`、`FORCAST`、`SLOPE`、`COVAR`、`RELATE`、`BETA`、`MEDIAN`、`AVEDEV`
+
+### 引用、逻辑和形态
+
+- 引用：`REF`、`REFV`、`REFX`、`REFXV`、`HHV`、`LLV`、`HHVBARS`、`LLVBARS`
+- 逻辑：`IF`、`IFF`、`IFN`、`CROSS`、`LONGCROSS`、`EVERY`、`EXIST`、`BARSLAST`、`BARSLASTCOUNT`、`COUNT`、`FILTER`、`NOT`
+- 形态：`UPNDAY`、`DOWNNDAY`、`NDAY`、`LAST`、`EXISTR`、`RANGE`、`BETWEEN`
+
+### 技术指标和筹码分布
+
+- 基础技术函数：`SMA`、`WMA`、`DMA`、`CONST`、`RSI`
+- 高级指标：`MACD_DIF`、`MACD_DEA`、`MACD_MACD`、`KDJ_K`、`KDJ_D`、`KDJ_J`、`SAR`、`CCI`、`DMI_PDI`、`DMI_MDI`、`DMI_ADX`、`DMI_ADXR`、`ADX`、`ADXR`、`TRIX`、`OBV`、`BIAS`、`ROC`、`MTM`、`WR`、`PSY`
+- 筹码和价值：`WINNER`、`LWINNER`、`COST`、`VALUEWHEN`、`TOPRANGE`、`LOWRANGE`
+
+### 行情、时间和周期
+
+- 行情字段：`OPEN`、`HIGH`、`LOW`、`CLOSE`、`VOL`、`AMOUNT`、`ADVANCE`、`DECLINE`
+- 时间：`DATE`、`TIME`、`YEAR`、`MONTH`、`DAY`、`HOUR`、`MINUTE`、`WEEKDAY`
+- 周期：`PERIOD`、`BARSCOUNT`、`CURRBARSCOUNT`、`TOTALBARSCOUNT`、`ISLASTBAR`、`BARSTATUS`、`BARSSINCE`、`SUMBARS`
+
+### 绘图事件
+
+- `DRAWTEXT(condition, price, text)`
+- `DRAWICON(condition, price, iconType)`
+- `DRAWNUMBER(condition, price, number)`
+- `STICKLINE(condition, price1, price2, width, empty)`
+- `DRAWLINE(cond1, price1, cond2, price2, expand)`
+- `POLYLINE(condition, price)`
+- `DRAWBAND(upper, upperColor, lower, lowerColor)`
+- `DRAWKLINE(high, open, low, close)`
+
+绘图函数会把事件写入 `FormulaResult.drawings`。调用方需要自行把事件映射到具体图表组件。
+
+## 示例公式
+
+### 均线
+
+```tdx
+MA5: MA(CLOSE, 5), COLORRED;
+MA10: MA(CLOSE, 10), COLORBLUE;
+MA20: MA(CLOSE, 20), COLORGREEN;
+GOLDEN: CROSS(MA5, MA10);
 ```
-// This is a comment
-MA5:MA(CLOSE,5);  // Calculate 5-day moving average
-{ This is a block comment }
-```
 
-### Variable Assignment
+### MACD
 
-```
-MA5 := MA(CLOSE,5);
-MA10 := MA(CLOSE,10);
-TREND: MA5 - MA10;
-```
-
-### Output Styles
-
-```
-MA5: MA(C,5), COLORRED, LINETHICK2;
+```tdx
+DIF := EMA(CLOSE, 12) - EMA(CLOSE, 26);
+DEA := EMA(DIF, 9);
+DIF线: DIF, COLORYELLOW;
+DEA线: DEA, COLORBLUE;
 MACD: (DIF - DEA) * 2, COLORSTICK;
-VOLBAR: VOL, VOLSTICK;
-HIDDEN: MA(C,20), NODRAW;
 ```
 
-### Arithmetic Operations
+### KDJ
 
+```tdx
+RSV := (CLOSE - LLV(LOW, 9)) / (HHV(HIGH, 9) - LLV(LOW, 9)) * 100;
+K := EMA(RSV, 3);
+D := EMA(K, 3);
+J := 3 * K - 2 * D;
+K线: K, COLORYELLOW;
+D线: D, COLORBLUE;
+J线: J, COLORMAGENTA;
 ```
-DIFF:MA5-MA10;                # Subtraction
-SUM_MA:MA5+MA10;              # Addition
-DOUBLE:CLOSE*2;               # Multiplication
-HALF:CLOSE/2;                 # Division
-```
-
-### Comparison Operations
-
-```
-ABOVE:MA5>MA10;               # Greater than
-BELOW:MA5<MA10;               # Less than
-AT_OR_ABOVE:MA5>=MA10;        # Greater or equal
-AT_OR_BELOW:MA5<=MA10;        # Less or equal
-EQUAL:MA5==MA10;              # Equal
-NOT_EQUAL:MA5!=MA10;          # Not equal
-```
-
-### Function Calls
-
-```
-MA(CLOSE,5)                   // Moving average
-EMA(CLOSE,12)                 // Exponential moving average
-IF(CONDITION,A,B)             // Conditional
-CROSS(MA5,MA10)               // Crossover detection
-```
-
-### Drawing Event Functions
-
-Drawing functions do not render charts directly. They emit rendering-agnostic `DrawingEvent` objects in `FormulaResult.drawings`, so callers can map events to Lightweight Charts, Canvas, SVG, or another chart adapter.
-
-```
-PRICE: C, COLORBLACK;
-DRAWTEXT(CROSS(MA(C,5), MA(C,10)), C, 'B');
-SELL_MARK := DRAWICON(CROSS(MA(C,10), MA(C,5)), H, 2);
-```
-
-## Built-in Functions
-
-### MA(data, period)
-Simple Moving Average - calculates the average over N periods.
-
-```
-MA5:MA(CLOSE,5);
-```
-
-### EMA(data, period)
-Exponential Moving Average - weighted average giving more weight to recent data.
-
-```
-EMA12:EMA(CLOSE,12);
-```
-
-### SUM(data, period)
-Summation - calculates the sum over N periods.
-
-```
-TOTAL:SUM(VOLUME,10);
-```
-
-### MAX(a, b)
-Maximum - returns element-wise maximum of two arrays.
-
-```
-HIGHEST:MAX(MA5,MA10);
-```
-
-### MIN(a, b)
-Minimum - returns element-wise minimum of two arrays.
-
-```
-LOWEST:MIN(MA5,MA10);
-```
-
-### REF(data, period)
-Reference - returns the value N periods ago.
-
-```
-PREV:REF(CLOSE,1);
-```
-
-### HHV(data, period)
-Highest High Value - returns the highest value over N periods.
-
-```
-HIGH20:HHV(HIGH,20);
-```
-
-### LLV(data, period)
-Lowest Low Value - returns the lowest value over N periods.
-
-```
-LOW20:LLV(LOW,20);
-```
-
-### IF(condition, a, b)
-Conditional - returns A when condition is true (non-zero), otherwise returns B.
-
-```
-SIGNAL:IF(MA5>MA10,1,0);
-```
-
-### CROSS(a, b)
-Crossover - detects when A crosses above B.
-
-```
-GOLDEN:CROSS(MA5,MA10);
-```
-
-### UPNDAY(data, n)
-Consecutive N Day Rise - returns 1 when price rises for N consecutive days.
-
-```
-UP3:UPNDAY(CLOSE,3);  # 3 consecutive rising days
-```
-
-### DOWNNDAY(data, n)
-Consecutive N Day Fall - returns 1 when price falls for N consecutive days.
-
-```
-DOWN2:DOWNNDAY(CLOSE,2);  # 2 consecutive falling days
-```
-
-### NDAY(condition, n)
-Condition Continuous N Days - returns 1 when condition is true for N consecutive days.
-
-```
-BULLISH:=CLOSE>OPEN;
-BULL3:NDAY(BULLISH,3);  # Bullish for 3 days
-```
-
-### RANGE(A, B, C) / BETWEEN(A, B, C)
-Range Check - returns 1 when A is between B and C.
-
-```
-IN_RANGE:RANGE(CLOSE,100,110);  # Close between 100-110
-```
-
-### WINNER(close, volume, targetPrice, [lookback])
-Profit Ratio - calculates the ratio of shares profitable at the target price.
-
-- **Parameters**:
-  - `close`: Close price array
-  - `volume`: Volume array
-  - `targetPrice`: Price level to calculate profit ratio
-  - `lookback`: Optional, lookback period (default 100)
-- **Returns**: Profit ratio (0-1)
-
-```
-WIN_RATIO:WINNER(CLOSE,VOLUME,CLOSE,50);
-```
-
-### LWINNER(close, volume, targetPrice, [lookback])
-Floating Profit Ratio - similar to WINNER but with shorter lookback (default 20).
-
-```
-FLOAT_WIN:LWINNER(CLOSE,VOLUME,CLOSE);
-```
-
-### COST(close, volume, percent, [lookback])
-Cost Distribution - returns the price level at which percent of shares are profitable.
-
-```
-COST70:COST(CLOSE,VOLUME,70);  # Price at 70% profit
-```
-
-### VALUEWHEN(condition, X)
-Value When - returns the value of X when condition is first true.
-
-```
-CROSS_UP:=CROSS(MA5,MA10);
-BUY_PRICE:VALUEWHEN(CROSS_UP,CLOSE);
-```
-
-### TOPRANGE(X, [period])
-New High - returns 1 when X reaches a new high over the period (default 20).
-
-```
-NEW_HIGH:TOPRANGE(HIGH,20);
-```
-
-### LOWRANGE(X, [period])
-New Low - returns 1 when X reaches a new low over the period (default 20).
-
-```
-NEW_LOW:LOWRANGE(LOW,20);
-```
-
-### OPEN
-Opening Price - returns the opening price array.
-
-```
-O:OPEN;
-```
-
-### HIGH
-Highest Price - returns the highest price array.
-
-```
-H:HIGH;
-```
-
-### LOW
-Lowest Price - returns the lowest price array.
-
-```
-L:LOW;
-```
-
-### CLOSE
-Closing Price - returns the closing price array.
-
-```
-C:CLOSE;
-```
-
-### VOL
-Trading Volume - returns the trading volume array.
-
-```
-V:VOL;
-```
-
-### AMOUNT
-Trading Amount - returns the trading amount array (requires `amount` field in market data).
-
-```
-A:AMOUNT;
-```
-
-### ADVANCE
-Advancing Stocks - returns the number of advancing stocks (index data only).
-
-```
-ADV:ADVANCE;
-```
-
-### DECLINE
-Declining Stocks - returns the number of declining stocks (index data only).
-
-```
-DEC:DECLINE;
-```
-
-### DATE
-Date - returns date in YYYYMMDD format.
-
-```
-D:DATE;  # 20240115
-```
-
-### TIME
-Time - returns time in HHMMSS format.
-
-```
-T:TIME;  # 093000
-```
-
-### YEAR
-Year - extracts year from timestamp.
-
-```
-Y:YEAR;  # 2024
-```
-
-### MONTH
-Month - extracts month from timestamp (1-12).
-
-```
-M:MONTH;  # 1=January, 12=December
-```
-
-### DAY
-Day - extracts day of month from timestamp (1-31).
-
-```
-D:DAY;
-```
-
-### HOUR
-Hour - extracts hour from timestamp (0-23).
-
-```
-H:HOUR;
-```
-
-### MINUTE
-Minute - extracts minute from timestamp (0-59).
-
-```
-MIN:MINUTE;
-```
-
-### WEEKDAY
-Weekday - returns day of week (1-7, 1=Monday, 7=Sunday).
-
-```
-WD:WEEKDAY;
-```
-
-### PERIOD
-Period Type - automatically detects the period type from timestamps.
-
-- **Returns**: Period code (1=1min, 5=5min, 15=15min, 30=30min, 60=1hour, 101=daily, 102=weekly, 103=monthly)
-
-```
-P:PERIOD;
-```
-
-### BARSCOUNT
-Total Bars - returns the total number of bars in the data.
-
-```
-BC:BARSCOUNT;
-```
-
-### ISLASTBAR
-Is Last Bar - returns 1 for the last bar, 0 for all others.
-
-```
-LAST:ISLASTBAR;
-```
-
-### BARSSINCE(condition)
-Bars Since - counts bars since the first time condition was true.
-
-```
-GOLDEN:=CROSS(MA5,MA10);
-HOLD:BARSSINCE(GOLDEN);
-```
-
-### BARSTATUS()
-Bar Status - returns `1` on the first bar, `2` on middle bars, and `3` on the last bar.
-
-```
-STATUS:BARSTATUS();
-```
-
-## Drawing Functions
-
-### DRAWTEXT(condition, price, text)
-Emit text markers when `condition` is true.
-
-```
-DRAWTEXT(CROSS(MA(C,5),MA(C,10)), C, 'B');
-```
-
-### DRAWICON(condition, price, iconType)
-Emit icon markers when `condition` is true.
-
-```
-DRAWICON(CROSS(MA(C,10),MA(C,5)), H, 2);
-```
-
-### DRAWNUMBER(condition, price, number)
-Emit numeric markers when `condition` is true.
-
-```
-DRAWNUMBER(C > O, C, C);
-```
-
-### STICKLINE(condition, price1, price2, width, empty)
-Emit stick-line events when `condition` is true.
-
-```
-STICKLINE(C > O, O, C, 2, 0);
-```
-
-### DRAWLINE(cond1, price1, cond2, price2, expand)
-Emit line segment events from start condition to end condition.
-
-```
-DRAWLINE(BARSTATUS() = 1, L, ISLASTBAR(), H, 0);
-```
-
-### POLYLINE(condition, price)
-Emit polyline points when `condition` is true.
-
-```
-POLYLINE(C > O, C);
-```
-
-### DRAWBAND(upper, upperColor, lower, lowerColor)
-Emit band events between two series.
-
-```
-DRAWBAND(H, 1, L, 2);
-```
-
-### DRAWKLINE(high, open, low, close)
-Emit custom K-line events.
-
-```
-DRAWKLINE(H, O, L, C);
-```
-
-## Advanced Technical Indicators
-
-### MACD - Moving Average Convergence Divergence
-
-MACD is a trend-following momentum indicator that shows the relationship between two moving averages.
-
-**MACD_DIF(close, fast, slow)** - DIF Line (Fast EMA - Slow EMA)
-```
-DIF:MACD_DIF(CLOSE,12,26);
-```
-
-**MACD_DEA(close, fast, slow, signal)** - DEA/Signal Line (EMA of DIF)
-```
-DEA:MACD_DEA(CLOSE,12,26,9);
-```
-
-**MACD_MACD(close, fast, slow, signal)** - MACD Histogram ((DIF - DEA) * 2)
-```
-MACD:MACD_MACD(CLOSE,12,26,9);
-BUY:CROSS(DIF,DEA);
-```
-
-### KDJ - Stochastic Oscillator
-
-KDJ is a momentum indicator comparing the closing price to the price range over a period.
-
-**KDJ_K(high, low, close, n, m1)** - K Line (smoothed RSV)
-```
-K:KDJ_K(HIGH,LOW,CLOSE,9,3);
-```
-
-**KDJ_D(high, low, close, n, m1, m2)** - D Line (smoothed K)
-```
-D:KDJ_D(HIGH,LOW,CLOSE,9,3,3);
-```
-
-**KDJ_J(high, low, close, n, m1, m2)** - J Line (3*K - 2*D)
-```
-J:KDJ_J(HIGH,LOW,CLOSE,9,3,3);
-BUY:CROSS(K,D);
-```
-
-### SAR - Parabolic Stop and Reverse
-
-SAR is a trend-following indicator providing entry and exit points.
-
-**SAR(high, low, step, max)** - Parabolic SAR
-```
-SAR_LINE:SAR(HIGH,LOW,0.02,0.2);
-LONG:CLOSE>SAR_LINE;
-SHORT:CLOSE<SAR_LINE;
-```
-
-### CCI - Commodity Channel Index
-
-CCI measures the deviation of price from its statistical mean.
-
-**CCI(high, low, close, period)** - CCI values (typically -200 to +200)
-```
-CCI14:CCI(HIGH,LOW,CLOSE,14);
-OVERBOUGHT:CCI14>100;
-OVERSOLD:CCI14<-100;
-```
-
-### DMI - Directional Movement Index
-
-DMI measures the strength and direction of a trend.
-
-**DMI_PDI(high, low, close, period)** - Positive Directional Indicator (+DI)
-```
-PDI:DMI_PDI(HIGH,LOW,CLOSE,14);
-```
-
-**DMI_MDI(high, low, close, period)** - Negative Directional Indicator (-DI)
-```
-MDI:DMI_MDI(HIGH,LOW,CLOSE,14);
-```
-
-**DMI_ADX(high, low, close, period)** - Average Directional Index
-```
-ADX:DMI_ADX(HIGH,LOW,CLOSE,14);
-STRONG_TREND:ADX>25;
-```
-
-**DMI_ADXR(high, low, close, period)** - ADX Rating
-```
-ADXR:DMI_ADXR(HIGH,LOW,CLOSE,14);
-```
-
-**ADX(high, low, close, period)** - Standalone ADX (alias for DMI_ADX)
-```
-ADX14:ADX(HIGH,LOW,CLOSE,14);
-```
-
-**ADXR(high, low, close, period)** - Standalone ADXR (alias for DMI_ADXR)
-```
-ADXR14:ADXR(HIGH,LOW,CLOSE,14);
-```
-
-### TRIX - Triple Exponential Average
-
-TRIX is a momentum oscillator showing the rate of change of a triple-smoothed EMA.
-
-**TRIX(close, period)** - TRIX percentage
-```
-TRIX12:TRIX(CLOSE,12);
-SIGNAL:MA(TRIX12,9);
-BUY:CROSS(TRIX12,SIGNAL);
-```
-
-### OBV - On Balance Volume
-
-OBV is a cumulative volume indicator showing buying and selling pressure.
-
-**OBV(close, volume)** - Cumulative volume
-```
-OBV_LINE:OBV(CLOSE,VOL);
-OBV_MA:MA(OBV_LINE,20);
-DIVERGENCE:CLOSE>REF(CLOSE,5) AND OBV_LINE<REF(OBV_LINE,5);
-```
-
-### BIAS - Bias Ratio
-
-BIAS measures the percentage deviation of price from its moving average.
-
-**BIAS(close, period)** - Deviation percentage
-```
-BIAS6:BIAS(CLOSE,6);
-BIAS12:BIAS(CLOSE,12);
-BIAS24:BIAS(CLOSE,24);
-OVERSOLD:BIAS6<-5;
-OVERBOUGHT:BIAS6>5;
-```
-
-### ROC - Rate of Change
-
-ROC measures the percentage change in price over a specified period.
-
-**ROC(close, period)** - Percentage change
-```
-ROC12:ROC(CLOSE,12);
-MOMENTUM_UP:ROC12>0;
-MOMENTUM_DOWN:ROC12<0;
-```
-
-### MTM - Momentum
-
-MTM measures the absolute change in price over a specified period.
-
-**MTM(close, period)** - Absolute difference
-```
-MTM12:MTM(CLOSE,12);
-MTM_MA:MA(MTM12,6);
-BUY:CROSS(MTM12,MTM_MA);
-```
-
-### WR - Williams %R
-
-WR is a momentum indicator measuring overbought/oversold levels.
-
-**WR(high, low, close, period)** - Williams %R (-100 to 0)
-```
-WR14:WR(HIGH,LOW,CLOSE,14);
-OVERSOLD:WR14<-80;
-OVERBOUGHT:WR14>-20;
-```
-
-### PSY - Psychological Line
-
-PSY measures the percentage of up days over a period.
-
-**PSY(close, period)** - Percentage of up days (0-100)
-```
-PSY12:PSY(CLOSE,12);
-BULLISH:PSY12>75;
-BEARISH:PSY12<25;
-```
-
-## Examples
-
-The project includes runnable formula examples in `demo/examples.ts`:
-
-### Moving Average (MA)
-```
-// demo/examples.ts
-MA5:MA(CLOSE,5);
-MA10:MA(CLOSE,10);
-MA20:MA(CLOSE,20);
-GOLDEN_CROSS:CROSS(MA5,MA10);
-```
 
-### MACD Indicator
-```
-// demo/examples.ts
-FAST:EMA(CLOSE,12);
-SLOW:EMA(CLOSE,26);
-MACD:FAST-SLOW;
-SIGNAL:EMA(MACD,9);
-HIST:MACD-SIGNAL;
-BUY:CROSS(MACD,SIGNAL);
-```
+### 绘图标记
 
-### KDJ Indicator
-```
-// demo/examples.ts
-N:9;
-HH:HHV(HIGH,N);
-LL:LLV(LOW,N);
-RSV:(CLOSE-LL)/(HH-LL)*100;
-K:EMA(RSV,3);
-D:EMA(K,3);
-J:3*K-2*D;
+```tdx
+MA5 := MA(C, 5);
+MA10 := MA(C, 10);
+DRAWTEXT(CROSS(MA5, MA10), C, 'B');
+DRAWICON(CROSS(MA10, MA5), H, 2);
 ```
 
-Sample market data helpers are available in `demo/examples.ts`.
+更多示例见 `demo/examples.ts` 和 `examples/formulas/`。
 
-## Development
+## 浏览器演示
 
-### Setup
+仓库内置了一个基于 Vite 和 Lightweight Charts 的演示页面。
 
 ```bash
-# Clone the repository
-git clone https://github.com/DTrader-store/formula-ts.git
-cd formula-ts
-
-# Install dependencies
 npm install
+npm run demo
+```
 
-# Build the project
+演示页面包含 MA、MACD、KDJ、RSI、自定义策略、时间过滤和筹码分布等公式示例。详情见 `demo/README.md`。
+
+## VSCode 语法高亮扩展
+
+`vscode-extension/` 提供了通达信公式的 VSCode 语法高亮、代码片段和示例文件。安装和使用方式见：
+
+- `VSCODE_EXTENSION_GUIDE.md`
+- `vscode-extension/README.md`
+- `vscode-extension/INSTALLATION_GUIDE.md`
+
+## 开发
+
+```bash
+npm install
 npm run build
-```
-
-### Available Scripts
-
-```bash
-npm run build          # Compile TypeScript to JavaScript
-npm test              # Run all tests
-npm run test:watch    # Run tests in watch mode
-npm run test:coverage # Run tests with coverage report
-npm run lint          # Lint the codebase
-npm run format        # Format code with Prettier
-npm run format:check  # Check code formatting
-```
-
-### Running Tests
-
-```bash
-# Run all tests
 npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run with coverage
 npm run test:coverage
+npm run lint
+npm run format:check
 ```
 
-### Project Structure
+常用脚本：
 
-```
-formula-ts/
+- `npm run build`：使用 `tsc` 编译 TypeScript。
+- `npm test`：运行 Jest 测试。
+- `npm run test:coverage`：生成测试覆盖率报告。
+- `npm run lint`：运行 ESLint。
+- `npm run format`：用 Prettier 格式化 `src` 和 `tests`。
+- `npm run demo`：构建库并启动浏览器演示。
+- `npm run demo:build`：构建演示页面。
+
+## 测试覆盖
+
+测试目录覆盖以下层面：
+
+- `tests/unit`：Lexer、Parser、AST、错误类型、市场数据和解释器基础行为。
+- `tests/interpreter/functions`：各类内置函数的行为测试。
+- `tests/integration`：`FormulaEngine` 端到端公式执行。
+- `tests/performance`：增量计算在较大数据集上的行为和延迟边界。
+
+## 目录结构
+
+```text
+.
 ├── src/
-│   ├── lexer/           # Lexical analysis
-│   │   ├── Lexer.ts
-│   │   ├── Token.ts
-│   │   └── TokenType.ts
-│   ├── parser/          # Syntax analysis
-│   │   ├── Parser.ts
-│   │   └── ast/
-│   │       └── nodes.ts
-│   ├── interpreter/     # Formula execution
-│   │   ├── FunctionRegistry.ts
-│   │   └── functions/
-│   │       ├── math.ts
-│   │       ├── reference.ts
-│   │       └── logical.ts
-│   ├── types/           # Type definitions
-│   │   ├── MarketData.ts
-│   │   └── FormulaResult.ts
-│   ├── errors/          # Error classes
-│   │   └── index.ts
-│   └── index.ts         # Main entry point
-├── tests/               # Test files
-│   ├── unit/
-│   └── interpreter/
-├── examples/            # Example formulas and data
-│   ├── formulas/
-│   └── data/
-├── dist/                # Compiled output
-└── docs/                # Documentation
+│   ├── FormulaEngine.ts
+│   ├── lexer/
+│   ├── parser/
+│   ├── interpreter/
+│   ├── types/
+│   └── errors/
+├── tests/
+├── demo/
+├── examples/
+├── docs/
+├── vscode-extension/
+├── package.json
+├── tsconfig.json
+└── README.md
 ```
 
-## Testing
+## 注意事项
 
-The project has comprehensive test coverage including:
-
-- **Unit Tests**: Test individual components (Lexer, Parser, Functions)
-- **Integration Tests**: Test complete workflows
-- **Function Tests**: Test all 10 core functions
-
-**Test Coverage Target**: >80%
-
-Run tests with:
-```bash
-npm test
-```
-
-View coverage report:
-```bash
-npm run test:coverage
-```
-
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Commit Message Convention
-
-Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
-
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation changes
-- `test:` Adding or updating tests
-- `refactor:` Code refactoring
-- `chore:` Maintenance tasks
+- 公式执行以数组为基本计算单位，每个数值序列通常与输入行情数据长度一致。
+- 指标在回看周期不足的位置通常返回 `NaN`，调用方渲染时需要处理空值。
+- 公式字符串和增量计算的前后结果应保持同一公式语义，`evaluateIncremental` 期望传入完整的新行情数组以及上一次 `FormulaResult`。
+- `BOLL`、`ATR` 等部分函数已作为直接导出的工具函数存在；是否能在公式解释器中直接按同名函数调用，以 `Interpreter` 当前支持为准。
+- 绘图函数只产出渲染无关事件，不负责图表绘制。
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
-
-Copyright (c) 2025 DTrader-store
-
-## Author
-
-[DTrader-store](https://github.com/DTrader-store)
-
-## Version
-
-1.0.0
-
-## Keywords
-
-- formula parser
-- technical analysis
-- financial indicators
-- typescript
-- MACD
-- moving average
-- stock analysis
-- trading indicators
-- tdx
-- tongdaxin
-
-## Support
-
-For issues and questions, please use the [GitHub Issues](https://github.com/DTrader-store/formula-ts/issues) page.
-
-## Publishing
-
-This package is published on NPM as [@dtrader/formula-ts](https://www.npmjs.com/package/@dtrader/formula-ts).
-
-To use the latest version, install it with your preferred package manager:
-
-```bash
-npm install @dtrader/formula-ts@latest
-```
+MIT
